@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="명산 인증수첩" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./icon-192.png" />
-<title>대한민국 100대 명산 인증 수첩 v93</title>
+<title>대한민국 100대 명산 인증 수첩 v91</title>
 <style>
 :root{
   --bg:#f3f6f1;--card:#fff;--line:#dbe4da;--text:#18201a;--sub:#66706a;
@@ -179,7 +179,7 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
     </div>
 
     <div class="card recent-card">
-      <div class="section-title"><span>최근 등산 기록 5개</span><span id="currentTabLabel">전체 보기</span></div>
+      <div class="section-title"><span>최근 등산 기록 5개</span><span id="currentTabLabel">현재 탭: 전체</span></div>
       <div class="recent-list" id="recentList"></div>
     </div>
 
@@ -218,7 +218,7 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
           <button class="zone-btn" data-zone="jeju">제주권</button>
         </div>
       </div>
-      <p class="map-help" id="mapHelpText">권역별 보기는 실제 지형도가 아니라, 권역별 산 목록을 보기 좋게 정리한 화면입니다.</p>
+      <p class="map-help" id="mapHelpText">권역별 산 목록을 한눈에 볼 수 있습니다.</p>
       <div class="map-wrap">
         <div class="map-backdrop" aria-hidden="true"></div>
         <div id="markerLayer"></div>
@@ -392,16 +392,6 @@ function matchesTab(item, tab){
   return true;
 }
 function tabLabel(tab){ return {all:"전체",forest:"산림청",black:"블랙야크",done:"방문기록 있음",undone:"미기록"}[tab] || "전체"; }
-function activateTab(tab){
-  activeTab = tab;
-  document.querySelectorAll(".tab-btn").forEach(x => x.classList.toggle("active", x.dataset.tab === tab));
-}
-function resetListToAll(){
-  activateTab("all");
-  document.getElementById("searchInput").value = "";
-  document.getElementById("sortFilter").value = "name";
-  renderAll();
-}
 
 function populateQuickSelect(){
   const select = document.getElementById("quickMountainSelect");
@@ -419,7 +409,7 @@ function populateQuickSelect(){
 function renderRecent(){
   const box = document.getElementById("recentList");
   box.innerHTML = "";
-  document.getElementById("currentTabLabel").textContent = activeTab === "all" ? "전체 보기" : `필터: ${tabLabel(activeTab)}`;
+  document.getElementById("currentTabLabel").textContent = `현재 탭: ${tabLabel(activeTab)}`;
   const rows = getAllVisitRows();
   const top5 = rows.slice(0,5);
   if (!top5.length) { box.innerHTML = '<div class="empty">아직 기록된 최근 등산이 없습니다.</div>'; return; }
@@ -561,15 +551,11 @@ function setZoneButtons(){
   document.querySelectorAll(".zone-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.zone === activeZone));
 }
 
-document.querySelectorAll(".view-btn").forEach(btn => btn.addEventListener("click", () => {
-  activeView = btn.dataset.view;
-  setViewButtons();
-  if (activeView === "list") resetListToAll();
-}));
+document.querySelectorAll(".view-btn").forEach(btn => btn.addEventListener("click", () => { activeView = btn.dataset.view; setViewButtons(); }));
 document.querySelectorAll(".zone-btn").forEach(btn => btn.addEventListener("click", () => { activeZone = btn.dataset.zone; setZoneButtons(); renderAll(); }));
 document.getElementById("searchInput").addEventListener("input", renderList);
 document.getElementById("sortFilter").addEventListener("change", renderList);
-document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => { activateTab(btn.dataset.tab); renderAll(); }));
+document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => { activeTab = btn.dataset.tab; document.querySelectorAll(".tab-btn").forEach(x => x.classList.remove("active")); btn.classList.add("active"); renderAll(); }));
 document.getElementById("quickMountainSelect").addEventListener("change", updateQuickChecksVisibility);
 document.getElementById("quickAddBtn").addEventListener("click", () => {
   const key = document.getElementById("quickMountainSelect").value;
@@ -595,12 +581,12 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   alert("모든 기록을 초기화했습니다.");
 });
 document.getElementById("exportBtn").addEventListener("click", () => {
-  const payload = { exportedAt: new Date().toISOString(), version: "v93", ...state };
+  const payload = { exportedAt: new Date().toISOString(), version: "v94", ...state };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "mountain-record-backup-v93.json";
+  a.download = "mountain-record-backup-v94.json";
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -627,17 +613,19 @@ document.getElementById("importFile").addEventListener("change", async (e) => {
 });
 
 document.getElementById("clearSearchBtn").addEventListener("click", () => {
-  resetListToAll();
+  document.getElementById("searchInput").value = "";
+  document.getElementById("sortFilter").value = "name";
+  renderList();
 });
 
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=v93").catch(() => {});
+    navigator.serviceWorker.register("./sw.js?v=v94").catch(() => {});
   });
 }
 
-setStaticCounts(); populateQuickSelect(); setViewButtons(); setZoneButtons(); updateLastSavedUI(getLastSavedAt()); resetListToAll();
+setStaticCounts(); populateQuickSelect(); setViewButtons(); setZoneButtons(); updateLastSavedUI(getLastSavedAt()); renderAll();
 </script>
 </body>
 </html>
