@@ -1,9 +1,9 @@
 {
   "name": "대한민국 100대 명산 인증 수첩",
-  "short_name": "100대 명산 수첩",
+  "short_name": "명산 인증수첩",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f5f7fb",
+  "background_color": "#f7faf6",
   "theme_color": "#2f6b3b",
   "lang": "ko",
   "icons": [

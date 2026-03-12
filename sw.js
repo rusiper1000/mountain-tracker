@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mountain-v88-cache-v1';
+const CACHE_NAME = 'mountain-v89-cache-v1';
 const ASSETS = [
   './',
   './index.html',
