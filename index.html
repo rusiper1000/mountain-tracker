@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="명산 인증수첩" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./icon-192.png" />
-<title>대한민국 100대 명산 인증 수첩 v91</title>
+<title>대한민국 100대 명산 인증 수첩 v95</title>
 <style>
 :root{
   --bg:#f3f6f1;--card:#fff;--line:#dbe4da;--text:#18201a;--sub:#66706a;
@@ -242,6 +242,7 @@ const STORAGE_KEY = "mountainRecordBookV92";
 const LEGACY_KEYS = ["mountainRecordBookV91","mountainRecordBookV90","mountainRecordBookV89","mountainRecordBookV88","mountainRecordBookV87","mountainRecordBookV86","mountainRecordBookV85","mountainRecordBookV84","mountainRecordBookV83","mountainRecordBook","mountain_tracker_pwa_v86_records","mountain_tracker_pwa_v85_records","mountain_tracker_pwa_v82_records","mountain_tracker_pwa_v81_records","mountain_tracker_pwa_v80_records","mountain_tracker_pwa_v70_records","mountain_tracker_pwa_v65_records","mountain_tracker_pwa_v64_records","mountain_tracker_pwa_v63_records","mountain_tracker_pwa_v62_records","mountain_tracker_pwa_v61_records","mountain_tracker_pwa_v6_records","mountain_tracker_pwa_v5_records","mountain_tracker_pwa_records","mountain_tracker_v4_records","mountain_tracker_v3_records","mountain_tracker_v2_clean_records"];
 const SAVE_META_KEY = "mountainRecordBookLastSavedV92";
 let activeTab = "all", activeView = "list", activeZone = "capital";
+const expandedVisits = new Set();
 const MASTER_TOTAL = MASTER.length;
 const FOREST_TOTAL = MASTER.filter(x => x.forest100).length;
 const BLACK_TOTAL = MASTER.filter(x => x.blackyak100).length;
