@@ -40,7 +40,7 @@ h1{margin:0 0 8px;font-size:28px;letter-spacing:-.4px}
 .fill.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.fill.green{background:linear-gradient(90deg,#16a34a,#4ade80)}.fill.orange{background:linear-gradient(90deg,#f97316,#fb923c)}
 .quick-card,.recent-card,.map-card{padding:14px;margin-bottom:14px}
 .dashboard-panel{display:grid;grid-template-columns:1.15fr .95fr;gap:12px;margin-bottom:14px}
-.dashboard-card{padding:14px}.dashboard-card h2{margin:0 0 10px;font-size:18px}.dashboard-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mini-box{padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb}.mini-label{font-size:12px;color:var(--sub);margin-bottom:6px}.mini-value{font-size:22px;font-weight:800;letter-spacing:-.3px}.candidate-list{display:grid;gap:8px}.candidate-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:#f8fafc;border:1px solid #edf0f4}.candidate-meta{font-size:12px;color:var(--sub);margin-top:3px}.candidate-item button,.quick-action-btn{height:38px;border-radius:12px;border:1px solid var(--line);padding:0 12px;background:#fff;font-weight:700;cursor:pointer}.quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.dashboard-card{padding:14px}.dashboard-card h2{margin:0 0 10px;font-size:18px}.dashboard-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mini-box{padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb}.mini-label{font-size:12px;color:var(--sub);margin-bottom:6px}.mini-value{font-size:22px;font-weight:800;letter-spacing:-.3px}
 .quick-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.quick-head h2{margin:0;font-size:19px}
 .quick-grid{display:grid;grid-template-columns:1.2fr .9fr auto;gap:10px;align-items:center}
 .quick-grid input,.quick-grid select,.quick-grid button,.toolbar input,.toolbar select,.toolbar button{
@@ -127,10 +127,6 @@ h1{margin:0 0 8px;font-size:28px;letter-spacing:-.4px}
           <div class="mini-box"><div class="mini-label">최근 등산</div><div class="mini-value" id="dashRecentVisit" style="font-size:16px;line-height:1.4;">없음</div></div>
         </div>
       </div>
-      <div class="card dashboard-card">
-        <h2>다음에 갈 산 후보</h2>
-        <div class="candidate-list" id="candidateList"></div>
-      </div>
     </div>
 
     <div class="card quick-card">
@@ -143,10 +139,6 @@ h1{margin:0 0 8px;font-size:28px;letter-spacing:-.4px}
       <div class="quick-checks">
         <label><input type="checkbox" id="quickForestCheck" /> 산림청 인증</label>
         <label><input type="checkbox" id="quickBlackCheck" /> 블랙야크 인증</label>
-      </div>
-      <div class="quick-actions">
-        <button class="quick-action-btn" id="quickTodayBtn" type="button">오늘 날짜</button>
-        <button class="quick-action-btn" id="quickYesterdayBtn" type="button">어제 날짜</button>
       </div>
     </div>
 
@@ -270,16 +262,6 @@ function updateQuickChecksVisibility(){
 
 function formatRecentLabel(dateStr, name){ return dateStr ? `${dateStr}<br>${name}` : "없음"; }
 function getAllVisitRows(){ const rows = []; MASTER.forEach(item => getVisits(item.key).forEach(d => rows.push({name:item.name,key:item.key,date:d,region:item.region || "미기재"}))); rows.sort((a,b)=> b.date.localeCompare(a.date) || a.name.localeCompare(b.name,"ko")); return rows; }
-function candidateMountains(){
-  return MASTER.filter(item => !mountainDone(item))
-    .map(item => {
-      const cert = getCert(item.key);
-      const score = (item.forest100 ? 2 : 0) + (item.blackyak100 ? 2 : 0) + (cert.forest ? 1 : 0) + (cert.black ? 1 : 0);
-      return { item, score };
-    })
-    .sort((a,b) => b.score - a.score || a.item.name.localeCompare(b.item.name, "ko"))
-    .slice(0,5);
-}
 
 function renderDashboard(){
   const totalVisits = Object.values(state.visits).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
@@ -316,30 +298,6 @@ function renderDashboard(){
   document.getElementById("blackPercent").textContent = `${blackPercent}%`;
   document.getElementById("overallPercent").textContent = `${overallPercent}%`;
 
-  const candidateBox = document.getElementById("candidateList");
-  candidateBox.innerHTML = "";
-  const candidates = candidateMountains();
-  if (!candidates.length) {
-    candidateBox.innerHTML = '<div class="empty">모든 산에 방문 기록이 있습니다. 대단합니다.</div>';
-  } else {
-    candidates.forEach(({item}) => {
-      const row = document.createElement("div");
-      row.className = "candidate-item";
-      row.innerHTML = `<div><div class="r-name">${item.name}</div><div class="candidate-meta">${item.region || "미기재"} · ${item.forest100 ? "산림청" : ""}${item.forest100 && item.blackyak100 ? " · " : ""}${item.blackyak100 ? "블랙야크" : ""}</div></div>`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = "기록하러 가기";
-      btn.addEventListener("click", () => {
-        activeView = "list";
-        setViewButtons();
-        document.getElementById("searchInput").value = item.name;
-        renderList();
-        window.scrollTo({ top: document.getElementById("quickMountainSelect").offsetTop - 20, behavior: "smooth" });
-      });
-      row.appendChild(btn);
-      candidateBox.appendChild(row);
-    });
-  }
 }
 
 function matchesTab(item, tab){
@@ -522,8 +480,6 @@ document.getElementById("clearSearchBtn").addEventListener("click", () => {
   renderList();
 });
 
-document.getElementById("quickTodayBtn").addEventListener("click", () => { document.getElementById("quickDate").value = todayStr(); });
-document.getElementById("quickYesterdayBtn").addEventListener("click", () => { const d = new Date(); d.setDate(d.getDate() - 1); document.getElementById("quickDate").value = d.toISOString().slice(0,10); });
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
