@@ -3,7 +3,7 @@
   "short_name": "명산 인증수첩",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f7faf6",
+  "background_color": "#234f31",
   "theme_color": "#2f6b3b",
   "lang": "ko",
   "icons": [
