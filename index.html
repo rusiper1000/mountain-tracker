@@ -533,7 +533,11 @@ function renderMarkers(){
     const button = document.createElement("button");
     button.type = "button";
     button.className = "marker-chip";
-    button.innerHTML = `<span class="marker-dot ${type}"></span><span><div class="marker-chip-name">${item.name}</div><div class="marker-chip-sub">${item.region || "미기재"} · 방문 ${visits}회</div></span>`;
+    const certBadges = [
+      item.forest100 ? '<span class="chip blue">산림청100</span>' : '',
+      item.blackyak100 ? '<span class="chip green">블랙야크100</span>' : ''
+    ].join('');
+    button.innerHTML = `<span class="marker-dot ${type}"></span><span><div class="marker-chip-name">${item.name}</div><div class="marker-chip-sub">${item.region || "미기재"} · 방문 ${visits}회</div>${certBadges ? `<div class="badges">${certBadges}</div>` : ''}</span>`;
     button.addEventListener("click", () => showMapInfo(item.key));
     layer.appendChild(button);
   });
