@@ -9,89 +9,243 @@
 <meta name="apple-mobile-web-app-title" content="명산 인증수첩" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./icon-192.png" />
-<title>대한민국 100대 명산 인증 수첩 v95</title>
+<title>대한민국 100대 명산 인증 수첩 v97</title>
 <style>
-:root{
+/* ───────────── 개선 목록 (v97) ─────────────
+ 1. [버그] 모바일 CSS 미디어쿼리 중괄호 누락으로 일부 스타일 전역 적용되던 문제 수정
+ 2. [UX] 빠른 기록 저장 시 성공 피드백(토스트 알림) 추가
+ 3. [UX] 오늘 날짜 기본값 설정 → 날짜 미선택 시 오늘로 자동 처리
+ 4. [UX] 산 목록 카드에 높이/고도 정보 표시 추가
+ 5. [기능] 메모 기능: 방문 기록별 메모(간단한 등산 노트) 추가
+ 6. [기능] 통계 탭: 월별 등산 달력 히트맵 추가
+ 7. [PWA] manifest start_url/icon 버전 쿼리 v97로 업데이트
+ 8. [성능] renderAll 호출 빈도 최적화 (탭 전환 시 불필요한 전체 재렌더 방지)
+ 9. [접근성] 버튼 aria-label, role 속성 보완
+10. [UI] 다크모드 지원 추가 (시스템 설정 감지)
+──────────────────────────────────────────── */
+:root {
   --bg:#f3f6f1;--card:#fff;--line:#dbe4da;--text:#18201a;--sub:#66706a;
   --blue:#2f6b3b;--green:#3f8a50;--orange:#d97706;--purple:#6d52c7;
-  --shadow:0 14px 30px rgba(26,43,31,.08);--radius:20px;--done-bg:#f2fbf4;--done-line:#bde2c3
+  --shadow:0 14px 30px rgba(26,43,31,.08);--radius:20px;
+  --done-bg:#f2fbf4;--done-line:#bde2c3;
+  --toast-bg:#1c3a22;
 }
-*{box-sizing:border-box} html,body{margin:0;padding:0;scroll-behavior:smooth}
-body{background:linear-gradient(180deg,#f7faf6 0%,#f3f6f1 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
-.wrap{max-width:1020px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 12px calc(72px + env(safe-area-inset-bottom))}
-.hero{background:linear-gradient(180deg,#ffffff 0%,#f6fbf5 100%);border:1px solid #dfe8de;border-radius:24px;box-shadow:var(--shadow);padding:20px 18px;margin-bottom:14px}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#111a12;--card:#1a2a1c;--line:#2d3f2e;--text:#e8f0e8;--sub:#8fa490;
+    --blue:#4a9b5e;--green:#5aac6e;--orange:#f59e0b;--purple:#9b7ce0;
+    --shadow:0 14px 30px rgba(0,0,0,.3);
+    --done-bg:#1a2f1d;--done-line:#2e5235;
+    --toast-bg:#4a9b5e;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;transition:background .3s,color .3s}
 
+/* ── 레이아웃 ── */
+.wrap{max-width:1020px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 12px calc(80px + env(safe-area-inset-bottom))}
+
+/* ── 히어로 ── */
+.hero{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:20px 18px;margin-bottom:14px}
 .hero-badge{display:inline-flex;align-items:center;padding:7px 12px;border-radius:999px;background:#edf7ee;border:1px solid #d5ead8;color:var(--blue);font-size:12px;font-weight:800;margin-bottom:12px}
+@media (prefers-color-scheme:dark){.hero-badge{background:#1e3a22;border-color:#2d5233}}
 h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
 .desc{margin:0;color:var(--sub);font-size:15px;line-height:1.7;max-width:720px}
+.save-banner{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.save-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12px;font-weight:800;color:var(--blue)}
 
-.save-banner{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.save-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;background:#ffffff;border:1px solid #d9e7d8;font-size:12px;font-weight:800;color:var(--blue)}.save-note{font-size:12px;color:var(--sub)}
-
+/* ── 통계 그리드 ── */
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
-.stat{padding:18px}.label{font-size:13px;color:var(--sub);margin-bottom:8px;font-weight:700}.value{font-size:29px;font-weight:800;letter-spacing:-.6px}.small{margin-top:6px;font-size:13px;color:var(--sub);line-height:1.5}
-.view-tabs,.tabs,.zone-tabs,.map-filter-tabs,.map-mode-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.view-tabs{position:sticky;top:calc(10px + env(safe-area-inset-top));z-index:20;padding:8px;background:rgba(243,246,241,.86);backdrop-filter:blur(12px);border-radius:18px;border:1px solid rgba(219,228,218,.8)}
-.view-btn,.tab-btn,.map-filter-btn,.zone-btn,.map-mode-btn{
-  min-height:44px;border-radius:999px;border:1px solid var(--line);background:#fff;padding:0 16px;font-size:14px;font-weight:800;cursor:pointer;color:var(--text);transition:transform .15s ease,box-shadow .15s ease,background .15s ease
+.stat{padding:18px}
+.label{font-size:13px;color:var(--sub);margin-bottom:8px;font-weight:700}
+.value{font-size:29px;font-weight:800;letter-spacing:-.6px}
+.small{margin-top:6px;font-size:13px;color:var(--sub);line-height:1.5}
+
+/* ── 탭 / 버튼 공통 ── */
+.view-tabs,.tabs,.zone-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.view-tabs{
+  position:sticky;top:calc(10px + env(safe-area-inset-top));z-index:20;
+  padding:8px;background:rgba(243,246,241,.92);backdrop-filter:blur(14px);
+  border-radius:18px;border:1px solid rgba(219,228,218,.8)
 }
-.view-btn.active,.tab-btn.active,.map-filter-btn.active,.zone-btn.active,.map-mode-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 10px 20px rgba(47,107,59,.18)}
-.view-btn:active,.tab-btn:active,.zone-btn:active,.map-filter-btn:active,.map-mode-btn:active,.actions button:active,.quick-grid button:active,.toolbar button:active{transform:scale(.985)}
+@media (prefers-color-scheme:dark){
+  .view-tabs{background:rgba(17,26,18,.92);border-color:rgba(45,63,46,.8)}
+}
+.view-btn,.tab-btn,.zone-btn{
+  min-height:44px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);padding:0 16px;font-size:14px;font-weight:800;
+  cursor:pointer;color:var(--text);
+  transition:transform .15s ease,box-shadow .15s ease,background .15s ease
+}
+.view-btn.active,.tab-btn.active,.zone-btn.active{
+  background:var(--blue);color:#fff;border-color:var(--blue);
+  box-shadow:0 10px 20px rgba(47,107,59,.18)
+}
+.view-btn:active,.tab-btn:active,.zone-btn:active,
+.actions button:active,.quick-grid button:active,.toolbar button:active{transform:scale(.985)}
+
+/* ── 진행도 패널 ── */
 .progress-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
- .progress-card{padding:18px}.progress-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.progress-head h3{margin:0;font-size:17px;letter-spacing:-.2px}.progress-meta{display:flex;justify-content:space-between;gap:8px;align-items:center}.progress-percent{font-weight:800;font-size:13px;color:var(--text)}
+.progress-card{padding:18px}
+.progress-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.progress-head h3{margin:0;font-size:17px;letter-spacing:-.2px}
+.progress-meta{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.progress-percent{font-weight:800;font-size:13px;color:var(--text)}
 .chip{border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;white-space:nowrap}
 .chip.blue{background:#eaf1ff;color:var(--blue)}.chip.green{background:#eaf8ef;color:var(--green)}.chip.orange{background:#fff2e8;color:var(--orange)}
+@media (prefers-color-scheme:dark){
+  .chip.blue{background:#1a2d3d;color:var(--blue)}.chip.green{background:#1a2d22;color:var(--green)}.chip.orange{background:#2d2210;color:var(--orange)}
+}
 .bar{width:100%;height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:8px}
-.fill{height:100%;width:0%;border-radius:999px;transition:width .2s ease}
-.fill.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.fill.green{background:linear-gradient(90deg,#16a34a,#4ade80)}.fill.orange{background:linear-gradient(90deg,#f97316,#fb923c)}
+@media (prefers-color-scheme:dark){.bar{background:#2d3a2e}}
+.fill{height:100%;width:0%;border-radius:999px;transition:width .4s ease}
+.fill.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.fill.green{background:linear-gradient(90deg,#16a34a,#4ade80)}
+.fill.orange{background:linear-gradient(90deg,#f97316,#fb923c)}
+
+/* ── 대시보드 ── */
 .quick-card,.recent-card,.map-card{padding:16px;margin-bottom:14px}
 .dashboard-panel{display:grid;grid-template-columns:1.15fr .95fr;gap:12px;margin-bottom:14px}
-.dashboard-card{padding:16px}.dashboard-card h2{margin:0 0 12px;font-size:19px}.dashboard-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mini-box{padding:14px;border-radius:16px;background:linear-gradient(180deg,#fbfdfb,#f5f9f4);border:1px solid #e1e9e0}.mini-label{font-size:12px;color:var(--sub);margin-bottom:6px;font-weight:700}.mini-value{font-size:23px;font-weight:800;letter-spacing:-.4px}
-.quick-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.quick-head h2{margin:0;font-size:20px;letter-spacing:-.3px}
+.dashboard-card{padding:16px}
+.dashboard-card h2{margin:0 0 12px;font-size:19px}
+.dashboard-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mini-box{padding:14px;border-radius:16px;background:var(--bg);border:1px solid var(--line)}
+.mini-label{font-size:12px;color:var(--sub);margin-bottom:6px;font-weight:700}
+.mini-value{font-size:23px;font-weight:800;letter-spacing:-.4px}
+
+/* ── 빠른 기록 ── */
+.quick-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.quick-head h2{margin:0;font-size:20px;letter-spacing:-.3px}
 .quick-grid{display:grid;grid-template-columns:1.2fr .9fr auto;gap:10px;align-items:center}
-.quick-grid input,.quick-grid select,.quick-grid button,.toolbar input,.toolbar select,.toolbar button{
-  height:48px;border-radius:15px;border:1px solid var(--line);background:#fff;padding:0 14px;font-size:15px;min-width:0;box-shadow:0 2px 0 rgba(255,255,255,.4) inset
+.quick-grid input,.quick-grid select,.quick-grid button,
+.toolbar input,.toolbar select,.toolbar button{
+  height:48px;border-radius:15px;border:1px solid var(--line);
+  background:var(--card);color:var(--text);padding:0 14px;font-size:15px;min-width:0;
+  box-shadow:0 2px 0 rgba(255,255,255,.4) inset
 }
 .quick-grid button{background:var(--blue);color:#fff;border:none;font-weight:800;cursor:pointer;box-shadow:0 12px 24px rgba(47,107,59,.16)}
 .quick-checks{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .quick-checks label,.cert-item{
-  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;font-size:13px;font-weight:700
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border-radius:12px;background:var(--bg);border:1px solid var(--line);font-size:13px;font-weight:700
 }
-.quick-checks input,.cert-item input{width:18px;height:18px}
+.quick-checks input,.cert-item input{width:18px;height:18px;accent-color:var(--blue)}
+
+/* ── 툴바 ── */
 .toolbar{display:grid;grid-template-columns:1fr .9fr auto auto auto auto;gap:10px;margin-bottom:14px;align-items:center}
-.toolbar button{cursor:pointer;font-weight:700}.btn-primary{background:var(--blue)!important;color:#fff;border:none!important;box-shadow:0 12px 24px rgba(47,107,59,.16)}.btn-soft{background:#f8fafc!important}
-.section-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0 10px;color:var(--sub);font-size:13px;font-weight:700}.section-title.wrapable{flex-wrap:wrap}
-.recent-list{display:grid;gap:8px}.recent-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 13px;border-radius:16px;background:#f8fafc;border:1px solid #edf0f4}.r-name{font-weight:700}.r-date{color:var(--sub);font-size:13px}
-.list{display:grid;gap:12px}.mountain{padding:16px;transition:background .15s ease,border-color .15s ease,transform .15s ease}.mountain.done{background:var(--done-bg);border-color:var(--done-line)}
-.mountain-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.name{font-size:19px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px}.sub{color:var(--sub);font-size:13px;line-height:1.6}
-.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
-.date-input{height:42px;border-radius:13px;border:1px solid var(--line);padding:0 12px;background:#fff}.actions button{height:42px;border-radius:13px;border:1px solid var(--line);padding:0 13px;background:#fff;font-weight:700;cursor:pointer}
+.toolbar button{cursor:pointer;font-weight:700}
+.btn-primary{background:var(--blue)!important;color:#fff;border:none!important;box-shadow:0 12px 24px rgba(47,107,59,.16)}
+.btn-soft{background:var(--bg)!important;color:var(--text)!important}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0 10px;color:var(--sub);font-size:13px;font-weight:700}
+.section-title.wrapable{flex-wrap:wrap}
+
+/* ── 최근 기록 ── */
+.recent-list{display:grid;gap:8px}
+.recent-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 13px;border-radius:16px;background:var(--bg);border:1px solid var(--line)}
+.r-name{font-weight:700}
+.r-date{color:var(--sub);font-size:13px}
+
+/* ── 산 리스트 ── */
+.list{display:grid;gap:12px}
+.mountain{padding:16px;transition:background .15s,border-color .15s,transform .15s}
+.mountain.done{background:var(--done-bg);border-color:var(--done-line)}
+.mountain-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.name{font-size:19px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px}
+.sub{color:var(--sub);font-size:13px;line-height:1.6}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.date-input{height:42px;border-radius:13px;border:1px solid var(--line);padding:0 12px;background:var(--card);color:var(--text)}
+.actions button{height:42px;border-radius:13px;border:1px solid var(--line);padding:0 13px;background:var(--card);color:var(--text);font-weight:700;cursor:pointer}
+
+/* ── 인증 체크 ── */
 .cert-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;margin-bottom:12px}
-.visit-area{border-top:1px dashed #e5e7eb;padding-top:12px}.visit-title{font-size:13px;color:var(--sub);margin-bottom:8px;font-weight:700}.visit-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}.visit-summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.recent-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#edf7ee;border:1px solid #d5ead8;color:var(--blue);font-size:12px;font-weight:800}.toggle-link{border:none;background:transparent;color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;padding:0}.visit-list{display:flex;gap:8px;flex-wrap:wrap}
-.visit-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e5e7eb;font-size:13px}.visit-pill button{border:none;background:transparent;color:#9ca3af;cursor:pointer;font-size:14px;padding:0;line-height:1}
-.empty{color:var(--sub);font-size:13px}
-.view-panel.hidden{display:none}.hidden{display:none!important}
+
+/* ── 방문 기록 ── */
+.visit-area{border-top:1px dashed var(--line);padding-top:12px}
+.visit-title{font-size:13px;color:var(--sub);margin-bottom:8px;font-weight:700}
+.visit-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.visit-summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.recent-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#edf7ee;border:1px solid #d5ead8;color:var(--blue);font-size:12px;font-weight:800}
+@media (prefers-color-scheme:dark){.recent-badge{background:#1e3a22;border-color:#2d5233}}
+.toggle-link{border:none;background:transparent;color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;padding:0}
+.visit-list{display:flex;gap:8px;flex-wrap:wrap}
+.visit-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13px}
+.visit-pill button{border:none;background:transparent;color:#9ca3af;cursor:pointer;font-size:14px;padding:0;line-height:1}
+
+/* ── 메모 ── */
+.memo-area{margin-top:8px}
+.memo-input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;background:var(--bg);color:var(--text);resize:none;min-height:60px;font-family:inherit;line-height:1.5}
+.memo-input:focus{outline:none;border-color:var(--blue)}
+.memo-label{font-size:12px;color:var(--sub);font-weight:700;margin-bottom:6px}
+
+/* ── 달력 히트맵 ── */
+.heatmap-section{padding:16px;margin-bottom:14px}
+.heatmap-title{font-size:17px;font-weight:800;margin:0 0 14px}
+.heatmap-year-nav{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.heatmap-year-nav button{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;font-weight:700}
+.heatmap-year-nav span{font-weight:800;font-size:16px}
+.heatmap-months{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.heatmap-month{display:flex;flex-direction:column;gap:6px}
+.heatmap-month-label{font-size:12px;color:var(--sub);font-weight:700;text-align:center}
+.heatmap-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.heatmap-day{aspect-ratio:1;border-radius:4px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);cursor:default;position:relative}
+.heatmap-day.has-visit{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700;cursor:pointer}
+.heatmap-day.has-visit:hover{transform:scale(1.15)}
+.heatmap-day.today-mark{box-shadow:0 0 0 2px var(--orange)}
+.heatmap-empty{background:transparent;border-color:transparent}
+.heatmap-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.heatmap-stat-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub)}
+.heatmap-stat-item strong{color:var(--text);font-weight:800}
+
+/* ── 지도 ── */
 .map-help{margin:0 0 12px;color:var(--sub);font-size:13px;line-height:1.5}
-.map-controls-block{padding:14px;border-radius:18px;background:#f8fafc;border:1px solid #e5e7eb;margin-bottom:12px}
+.map-controls-block{padding:14px;border-radius:18px;background:var(--bg);border:1px solid var(--line);margin-bottom:12px}
 .controls-title{font-size:13px;color:var(--sub);font-weight:800;margin-bottom:10px}
 .map-wrap{position:relative;width:100%;min-height:560px;border-radius:24px;overflow:hidden;border:1px solid #cfe3cf;background:linear-gradient(180deg,#d7ecd4,#c9e6c6);padding:22px}
-.map-backdrop{position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.18),transparent 20%),radial-gradient(circle at 80% 30%,rgba(255,255,255,.12),transparent 18%),radial-gradient(circle at 40% 75%,rgba(255,255,255,.10),transparent 22%),linear-gradient(180deg,#d7ecd4,#c9e6c6)}
+@media (prefers-color-scheme:dark){.map-wrap{border-color:#2d4f2e;background:linear-gradient(180deg,#1a3320,#162b1c)}}
+.map-backdrop{position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.18),transparent 20%),radial-gradient(circle at 80% 30%,rgba(255,255,255,.12),transparent 18%),linear-gradient(180deg,#d7ecd4,#c9e6c6)}
+@media (prefers-color-scheme:dark){.map-backdrop{background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.05),transparent 20%),linear-gradient(180deg,#1a3320,#162b1c)}}
 #markerLayer{position:relative;z-index:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;align-content:start}
-.marker-chip{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:17px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.86);backdrop-filter:blur(6px);box-shadow:0 10px 24px rgba(0,0,0,.06);cursor:pointer;text-align:left}
+.marker-chip{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:17px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.86);backdrop-filter:blur(6px);box-shadow:0 10px 24px rgba(0,0,0,.06);cursor:pointer;text-align:left;color:var(--text)}
+@media (prefers-color-scheme:dark){.marker-chip{background:rgba(26,42,28,.88);border-color:rgba(255,255,255,.1)}}
 .marker-chip:hover{transform:translateY(-1px)}
 .marker-chip-name{font-size:14px;font-weight:800;line-height:1.35}
 .marker-chip-sub{font-size:12px;color:var(--sub);margin-top:2px}
 .marker-dot{width:12px;height:12px;border-radius:999px;flex:0 0 12px}
-.marker-dot.forest{background:var(--blue)} .marker-dot.black{background:var(--green)} .marker-dot.both{background:var(--purple)} .marker-dot.pending{background:var(--orange)}
+.marker-dot.forest{background:var(--blue)}.marker-dot.black{background:var(--green)}.marker-dot.both{background:var(--purple)}.marker-dot.pending{background:var(--orange)}
 .map-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.legend-item{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e5e7eb;font-size:13px}
+.legend-item{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13px}
 .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
 .dot.orange{background:var(--orange)}.dot.blue{background:var(--blue)}.dot.green{background:var(--green)}.dot.purple{background:var(--purple)}
-.map-info{margin-top:12px;padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e5e7eb}
-.map-info-title{font-size:16px;font-weight:800;margin-bottom:4px}.map-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.map-actions button{height:38px;border-radius:12px;border:1px solid var(--line);padding:0 12px;background:#fff;font-weight:700;cursor:pointer}
+.map-info{margin-top:12px;padding:12px;border-radius:14px;background:var(--bg);border:1px solid var(--line)}
+.map-info-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.map-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.map-actions button{height:38px;border-radius:12px;border:1px solid var(--line);padding:0 12px;background:var(--card);color:var(--text);font-weight:700;cursor:pointer}
+
+/* ── 빈 상태 / 유틸 ── */
+.empty{color:var(--sub);font-size:13px}
+.view-panel.hidden,.hidden{display:none!important}
 .footer-note{text-align:center;color:var(--sub);font-size:13px;margin-top:18px;line-height:1.7;padding-bottom:8px}
-@media (max-width:980px){.grid{grid-template-columns:1fr 1fr}.progress-panel{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr 1fr}.dashboard-panel{grid-template-columns:1fr}}
+
+/* ── 토스트 알림 ── */
+.toast{
+  position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--toast-bg);color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;font-weight:700;
+  box-shadow:0 8px 30px rgba(0,0,0,.2);z-index:9999;opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;white-space:nowrap
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── 반응형 ── */
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr 1fr}
+  .progress-panel{grid-template-columns:1fr}
+  .toolbar{grid-template-columns:1fr 1fr 1fr}
+  .dashboard-panel{grid-template-columns:1fr}
+  .heatmap-months{grid-template-columns:repeat(3,1fr)}
+}
 @media (max-width:700px){
   .wrap{padding-left:10px;padding-right:10px}
   .hero{padding:18px 14px 16px;border-radius:22px}
@@ -100,7 +254,7 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
   .stat{padding:15px}
   .value{font-size:24px}
   .view-tabs{top:calc(8px + env(safe-area-inset-top));padding:7px;gap:7px}
-  .view-btn,.tab-btn,.zone-btn,.map-filter-btn,.map-mode-btn{flex:1 1 auto;padding:0 14px;min-width:calc(50% - 6px)}
+  .view-btn,.tab-btn,.zone-btn{flex:1 1 auto;padding:0 14px;min-width:calc(50% - 6px)}
   .mountain-top{flex-direction:column}
   .actions{justify-content:flex-start;width:100%}
   .actions > *{flex:1 1 calc(50% - 6px)}
@@ -114,45 +268,73 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
   #markerLayer{grid-template-columns:1fr}
   .map-wrap{min-height:auto;padding:14px}
   .map-card,.quick-card,.recent-card{padding:14px}
+  .heatmap-months{grid-template-columns:repeat(2,1fr)}
 }
+@media (max-width:520px){
+  .grid{grid-template-columns:1fr}
   .grid,.dashboard-mini,.toolbar{grid-template-columns:1fr}
-  .view-btn,.tab-btn,.zone-btn,.map-filter-btn,.map-mode-btn,.actions > *{min-width:100%;flex-basis:100%}
+  .view-btn,.tab-btn,.zone-btn,.actions > *{min-width:100%;flex-basis:100%}
   .quick-checks label,.cert-item{width:100%;justify-content:flex-start}
   .recent-item{align-items:flex-start;flex-direction:column}
+  h1{font-size:24px}
+  .value{font-size:24px}
+  .map-wrap{min-height:auto;padding:12px}
+  .marker-chip{padding:12px}
+  .marker-chip-name{font-size:13px}
+  .marker-chip-sub{font-size:11px}
+  .heatmap-months{grid-template-columns:repeat(2,1fr)}
 }
-@media (max-width:520px){.grid{grid-template-columns:1fr}h1{font-size:24px}.value{font-size:24px}.map-wrap{min-height:auto;padding:12px}.marker-chip{padding:12px}.marker-chip-name{font-size:13px}.marker-chip-sub{font-size:11px}}
 </style>
 </head>
 <body>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="wrap">
+  <!-- 히어로 -->
   <div class="hero">
-    <div class="hero-badge">대한민국 100대 명산 인증 수첩</div>
-    <h1>대한민국 100대 명산 인증 수첩</h1>
+    <div class="hero-badge" aria-label="앱 이름">대한민국 100대 명산 인증 수첩</div>
+    <h1>대한민국 100대 명산<br>인증 수첩</h1>
     <p class="desc">진행률, 방문 날짜, 인증 상태를 한곳에서 기록합니다.</p>
     <div class="save-banner">
       <div class="save-pill">마지막 저장 <span id="lastSavedAt">아직 없음</span></div>
     </div>
   </div>
 
-  <div class="grid">
+  <!-- 요약 통계 카드 -->
+  <div class="grid" role="region" aria-label="요약 통계">
     <div class="card stat"><div class="label">전체 관리 산</div><div class="value" id="totalMountains">122</div><div class="small">산 이름 기준 고유 항목</div></div>
     <div class="card stat"><div class="label">총 방문 기록</div><div class="value" id="totalVisits">0</div><div class="small">누적 입력한 날짜 수</div></div>
     <div class="card stat"><div class="label">최근 등산</div><div class="value" id="recentVisit" style="font-size:20px;">없음</div><div class="small">가장 최근 방문일</div></div>
     <div class="card stat"><div class="label">방문 기록 있는 산</div><div class="value" id="completedMountains">0</div><div class="small">방문일 1회 이상 기준</div></div>
   </div>
 
-  <div class="progress-panel">
-    <div class="card progress-card"><div class="progress-head"><h3>산림청 100대 명산</h3><div class="chip blue"><span id="forestCount">0</span> / <span id="forestTotal">100</span></div></div><div class="bar"><div class="fill blue" id="forestFill"></div></div><div class="progress-meta"><div class="small" id="forestRemain">남은 산 0개</div><div class="progress-percent" id="forestPercent">0%</div></div></div>
-    <div class="card progress-card"><div class="progress-head"><h3>블랙야크 100</h3><div class="chip green"><span id="blackCount">0</span> / <span id="blackTotal">100</span></div></div><div class="bar"><div class="fill green" id="blackFill"></div></div><div class="progress-meta"><div class="small" id="blackRemain">남은 산 0개</div><div class="progress-percent" id="blackPercent">0%</div></div></div>
-    <div class="card progress-card"><div class="progress-head"><h3>방문한 산 진행도</h3><div class="chip orange"><span id="overallCount">0</span> / <span id="overallTotal">122</span></div></div><div class="bar"><div class="fill orange" id="overallFill"></div></div><div class="progress-meta"><div class="small" id="overallRemain">아직 방문 기록 없는 산 0개</div><div class="progress-percent" id="overallPercent">0%</div></div></div>
+  <!-- 진행도 -->
+  <div class="progress-panel" role="region" aria-label="인증 진행도">
+    <div class="card progress-card">
+      <div class="progress-head"><h3>산림청 100대 명산</h3><div class="chip blue"><span id="forestCount">0</span> / <span id="forestTotal">100</span></div></div>
+      <div class="bar" role="progressbar" aria-labelledby="forestCount" aria-valuemin="0" aria-valuemax="100"><div class="fill blue" id="forestFill"></div></div>
+      <div class="progress-meta"><div class="small" id="forestRemain">남은 산 0개</div><div class="progress-percent" id="forestPercent">0%</div></div>
+    </div>
+    <div class="card progress-card">
+      <div class="progress-head"><h3>블랙야크 100</h3><div class="chip green"><span id="blackCount">0</span> / <span id="blackTotal">100</span></div></div>
+      <div class="bar" role="progressbar" aria-labelledby="blackCount" aria-valuemin="0" aria-valuemax="100"><div class="fill green" id="blackFill"></div></div>
+      <div class="progress-meta"><div class="small" id="blackRemain">남은 산 0개</div><div class="progress-percent" id="blackPercent">0%</div></div>
+    </div>
+    <div class="card progress-card">
+      <div class="progress-head"><h3>방문한 산 진행도</h3><div class="chip orange"><span id="overallCount">0</span> / <span id="overallTotal">122</span></div></div>
+      <div class="bar" role="progressbar" aria-labelledby="overallCount" aria-valuemin="0" aria-valuemax="122"><div class="fill orange" id="overallFill"></div></div>
+      <div class="progress-meta"><div class="small" id="overallRemain">아직 방문 기록 없는 산 0개</div><div class="progress-percent" id="overallPercent">0%</div></div>
+    </div>
   </div>
 
-  <div class="view-tabs">
-    <button class="view-btn active" data-view="list">리스트 보기</button>
-    <button class="view-btn" data-view="map">지도 보기</button>
+  <!-- 뷰 전환 탭 -->
+  <div class="view-tabs" role="tablist" aria-label="보기 전환">
+    <button class="view-btn active" data-view="list" role="tab" aria-selected="true" aria-controls="listView">리스트 보기</button>
+    <button class="view-btn" data-view="map" role="tab" aria-selected="false" aria-controls="mapView">지도 보기</button>
+    <button class="view-btn" data-view="stats" role="tab" aria-selected="false" aria-controls="statsView">📅 통계</button>
   </div>
 
-  <div id="listView" class="view-panel">
+  <!-- 리스트 뷰 -->
+  <div id="listView" class="view-panel" role="tabpanel">
     <div class="dashboard-panel">
       <div class="card dashboard-card">
         <h2>한눈에 보는 등산 현황</h2>
@@ -165,12 +347,16 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
       </div>
     </div>
 
+    <!-- 빠른 기록 -->
     <div class="card quick-card">
-      <div class="quick-head"><h2>오늘 등산 기록</h2><div class="small">산 선택 후 방문일과 체크를 한 번에 저장</div></div>
+      <div class="quick-head">
+        <h2>오늘 등산 기록</h2>
+        <div class="small">산 선택 후 방문일과 체크를 한 번에 저장</div>
+      </div>
       <div class="quick-grid">
-        <select id="quickMountainSelect"><option value="">산을 선택하세요</option></select>
-        <input id="quickDate" type="date" />
-        <button id="quickAddBtn" type="button">기록 저장</button>
+        <select id="quickMountainSelect" aria-label="산 선택"><option value="">산을 선택하세요</option></select>
+        <input id="quickDate" type="date" aria-label="방문 날짜" />
+        <button id="quickAddBtn" type="button" aria-label="기록 저장">기록 저장</button>
       </div>
       <div class="quick-checks">
         <label><input type="checkbox" id="quickForestCheck" /> 산림청 인증</label>
@@ -178,226 +364,289 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
       </div>
     </div>
 
+    <!-- 최근 기록 -->
     <div class="card recent-card">
       <div class="section-title"><span>최근 등산 기록 5개</span><span id="currentTabLabel">현재 탭: 전체</span></div>
       <div class="recent-list" id="recentList"></div>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="all">전체</button>
-      <button class="tab-btn" data-tab="forest">산림청</button>
-      <button class="tab-btn" data-tab="black">블랙야크</button>
-      <button class="tab-btn" data-tab="done">방문기록 있음</button>
-      <button class="tab-btn" data-tab="undone">미기록</button>
+    <!-- 탭 필터 -->
+    <div class="tabs" role="tablist" aria-label="목록 필터">
+      <button class="tab-btn active" data-tab="all" role="tab" aria-selected="true">전체</button>
+      <button class="tab-btn" data-tab="forest" role="tab" aria-selected="false">산림청</button>
+      <button class="tab-btn" data-tab="black" role="tab" aria-selected="false">블랙야크</button>
+      <button class="tab-btn" data-tab="done" role="tab" aria-selected="false">방문기록 있음</button>
+      <button class="tab-btn" data-tab="undone" role="tab" aria-selected="false">미기록</button>
     </div>
 
+    <!-- 툴바 -->
     <div class="toolbar">
-      <input id="searchInput" type="text" placeholder="산 이름 또는 지역 검색" />
-      <select id="sortFilter"><option value="name">이름순</option><option value="recent">최근 등산순</option><option value="visits">방문 횟수순</option></select>
-      <button class="btn-soft" id="exportBtn" type="button">백업 내보내기</button>
-      <button class="btn-soft" id="importBtn" type="button">백업 가져오기</button>
-      <button class="btn-soft" id="clearSearchBtn" type="button">검색 지우기</button>
-      <button class="btn-primary" id="resetBtn" type="button">기록 초기화</button>
-      <input id="importFile" type="file" accept=".json" style="display:none;" />
+      <input id="searchInput" type="search" placeholder="산 이름 또는 지역 검색" aria-label="산 검색" />
+      <select id="sortFilter" aria-label="정렬 기준">
+        <option value="name">이름순</option>
+        <option value="recent">최근 등산순</option>
+        <option value="visits">방문 횟수순</option>
+      </select>
+      <button class="btn-soft" id="exportBtn" type="button" aria-label="백업 파일 내보내기">백업 내보내기</button>
+      <button class="btn-soft" id="importBtn" type="button" aria-label="백업 파일 가져오기">백업 가져오기</button>
+      <button class="btn-soft" id="clearSearchBtn" type="button" aria-label="검색 초기화">검색 지우기</button>
+      <button class="btn-primary" id="resetBtn" type="button" aria-label="모든 기록 초기화">기록 초기화</button>
+      <input id="importFile" type="file" accept=".json" style="display:none;" aria-hidden="true" />
     </div>
 
-    <div class="section-title wrapable"><span id="listCountLabel">목록 0개</span><span id="listMetaInfo">현재 조건에 맞는 산 목록입니다</span></div>
-    <div class="list" id="mountainList"></div>
+    <div class="section-title wrapable">
+      <span id="listCountLabel">목록 0개</span>
+      <span id="listMetaInfo">현재 조건에 맞는 산 목록입니다</span>
+    </div>
+    <div class="list" id="mountainList" role="list"></div>
   </div>
 
-  <div id="mapView" class="view-panel hidden">
+  <!-- 지도 뷰 -->
+  <div id="mapView" class="view-panel hidden" role="tabpanel">
     <div class="card map-card">
       <div class="map-controls-block" id="zoneControls">
         <div class="controls-title">권역 선택</div>
-        <div class="zone-tabs">
-          <button class="zone-btn active" data-zone="capital">수도권</button>
-          <button class="zone-btn" data-zone="gangwon">강원권</button>
-          <button class="zone-btn" data-zone="chungcheong">충청권</button>
-          <button class="zone-btn" data-zone="jeolla">전라권</button>
-          <button class="zone-btn" data-zone="gyeongsang">경상권</button>
-          <button class="zone-btn" data-zone="jeju">제주권</button>
+        <div class="zone-tabs" role="tablist" aria-label="권역 선택">
+          <button class="zone-btn active" data-zone="capital" role="tab">수도권</button>
+          <button class="zone-btn" data-zone="gangwon" role="tab">강원권</button>
+          <button class="zone-btn" data-zone="chungcheong" role="tab">충청권</button>
+          <button class="zone-btn" data-zone="jeolla" role="tab">전라권</button>
+          <button class="zone-btn" data-zone="gyeongsang" role="tab">경상권</button>
+          <button class="zone-btn" data-zone="jeju" role="tab">제주권</button>
         </div>
       </div>
       <p class="map-help" id="mapHelpText">권역별 산 목록을 한눈에 볼 수 있습니다.</p>
       <div class="map-wrap">
         <div class="map-backdrop" aria-hidden="true"></div>
-        <div id="markerLayer"></div>
+        <div id="markerLayer" role="list"></div>
       </div>
-      <div class="map-legend">
-        <div class="legend-item"><span class="dot orange"></span> 미완등</div>
-        <div class="legend-item"><span class="dot blue"></span> 산림청 완료</div>
-        <div class="legend-item"><span class="dot green"></span> 블랙야크 완료</div>
-        <div class="legend-item"><span class="dot purple"></span> 둘 다 완료</div>
+      <div class="map-legend" aria-label="범례">
+        <div class="legend-item"><span class="dot orange" aria-hidden="true"></span> 미완등</div>
+        <div class="legend-item"><span class="dot blue" aria-hidden="true"></span> 산림청 완료</div>
+        <div class="legend-item"><span class="dot green" aria-hidden="true"></span> 블랙야크 완료</div>
+        <div class="legend-item"><span class="dot purple" aria-hidden="true"></span> 둘 다 완료</div>
       </div>
-      <div class="map-info" id="mapInfo"><div class="map-info-title">산을 선택하세요</div><div class="small">권역 카드에서 산 이름을 누르면 방문 기록과 인증 상태가 표시됩니다.</div></div>
+      <div class="map-info" id="mapInfo" role="region" aria-live="polite">
+        <div class="map-info-title">산을 선택하세요</div>
+        <div class="small">권역 카드에서 산 이름을 누르면 방문 기록과 인증 상태가 표시됩니다.</div>
+      </div>
     </div>
   </div>
 
+  <!-- 통계/달력 뷰 -->
+  <div id="statsView" class="view-panel hidden" role="tabpanel">
+    <div class="card heatmap-section">
+      <h2 class="heatmap-title">📅 연간 등산 달력</h2>
+      <div class="heatmap-year-nav">
+        <button id="heatmapPrevYear" type="button" aria-label="이전 연도">◀</button>
+        <span id="heatmapYear">2025</span>
+        <button id="heatmapNextYear" type="button" aria-label="다음 연도">▶</button>
+      </div>
+      <div class="heatmap-months" id="heatmapMonths" aria-label="월별 달력"></div>
+      <div class="heatmap-stats" id="heatmapStats" aria-label="연간 통계"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-const MASTER = [{"key": "가리산", "name": "가리산", "region": "홍천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "가리왕산", "name": "가리왕산", "region": "정선", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "가야산(경상)", "name": "가야산(경상)", "region": "합천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "가야산(충남)", "name": "가야산(충남)", "region": "예산", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "가지산", "name": "가지산", "region": "울주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "감악산(원주)", "name": "감악산(원주)", "region": "원주", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "감악산(파주)", "name": "감악산(파주)", "region": "파주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "강천산", "name": "강천산", "region": "순창", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "계룡산", "name": "계룡산", "region": "공주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "계방산", "name": "계방산", "region": "평창", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "공작산", "name": "공작산", "region": "홍천", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "관악산", "name": "관악산", "region": "서울", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "광덕산", "name": "광덕산", "region": "천안", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "구병산", "name": "구병산", "region": "보은", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "구봉산", "name": "구봉산", "region": "진안", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "금산", "name": "금산", "region": "남해", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "금수산", "name": "금수산", "region": "제천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "금오산", "name": "금오산", "region": "구미", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "금정산", "name": "금정산", "region": "양산", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "깃대봉", "name": "깃대봉", "region": "신안", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "남산", "name": "남산", "region": "경주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "내변산", "name": "내변산", "region": "부안", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "내연산", "name": "내연산", "region": "영덕", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "내장산", "name": "내장산", "region": "정읍", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "달마산", "name": "달마산", "region": "해남", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "대둔산", "name": "대둔산", "region": "논산", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "대암산", "name": "대암산", "region": "양구", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "대야산", "name": "대야산", "region": "괴산", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "덕룡산", "name": "덕룡산", "region": "전남", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "덕숭산", "name": "덕숭산", "region": "예산", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "덕유산", "name": "덕유산", "region": "무주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "덕항산", "name": "덕항산", "region": "삼척", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "도락산", "name": "도락산", "region": "단양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "도봉산", "name": "도봉산", "region": "서울", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "동악산", "name": "동악산", "region": "곡성", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "두륜산", "name": "두륜산", "region": "해남", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "두타산", "name": "두타산", "region": "삼척", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "마니산", "name": "마니산", "region": "강화", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "마이산", "name": "마이산", "region": "진안", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "명성산", "name": "명성산", "region": "철원", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "명지산", "name": "명지산", "region": "가평", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "모악산", "name": "모악산", "region": "전주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "무등산", "name": "무등산", "region": "광주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "무학산", "name": "무학산", "region": "창원", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "미륵산", "name": "미륵산", "region": "통영", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "민주지산", "name": "민주지산", "region": "영동", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "방장산", "name": "방장산", "region": "장성", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "방태산", "name": "방태산", "region": "인제", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "백덕산", "name": "백덕산", "region": "영월", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "백암산", "name": "백암산", "region": "장성", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "백운산(광양)", "name": "백운산(광양)", "region": "광양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "백운산(정선)", "name": "백운산(정선)", "region": "정선", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "백운산(포천)", "name": "백운산(포천)", "region": "포천", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "변산", "name": "변산", "region": "부안", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "북한산", "name": "북한산", "region": "서울", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "불갑산", "name": "불갑산", "region": "영광", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "비슬산", "name": "비슬산", "region": "대구", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "삼악산", "name": "삼악산", "region": "춘천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "서대산", "name": "서대산", "region": "금산", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "선운산", "name": "선운산", "region": "고창", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "설악산", "name": "설악산", "region": "양양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "성인봉", "name": "성인봉", "region": "울릉", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "소백산", "name": "소백산", "region": "영주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "소요산", "name": "소요산", "region": "동두천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "속리산", "name": "속리산", "region": "보은", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "수락산", "name": "수락산", "region": "서울", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "신불산", "name": "신불산", "region": "울주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "연인산", "name": "연인산", "region": "가평", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "연화산", "name": "연화산", "region": "고성", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "오대산(노인봉)", "name": "오대산(노인봉)", "region": "강릉", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "오대산(비로봉)", "name": "오대산(비로봉)", "region": "평창", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "오봉산", "name": "오봉산", "region": "춘천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "오서산", "name": "오서산", "region": "보령", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "용문산", "name": "용문산", "region": "양평", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "용봉산", "name": "용봉산", "region": "홍성", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "용화산", "name": "용화산", "region": "춘천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "운문산", "name": "운문산", "region": "청도", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "운악산", "name": "운악산", "region": "가평", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "운장산", "name": "운장산", "region": "진안", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "월악산", "name": "월악산", "region": "제천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "월출산", "name": "월출산", "region": "영암", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "유명산", "name": "유명산", "region": "가평", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "응봉산", "name": "응봉산", "region": "울진", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "장안산", "name": "장안산", "region": "장수", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "재약산", "name": "재약산", "region": "밀양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "적상산", "name": "적상산", "region": "무주", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "점봉산", "name": "점봉산", "region": "인제", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "조계산", "name": "조계산", "region": "순천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "조령산", "name": "조령산", "region": "문경", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "주왕산", "name": "주왕산", "region": "청송", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "주흘산", "name": "주흘산", "region": "문경", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "지리산(바래봉)", "name": "지리산(바래봉)", "region": "남원", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "지리산(반야봉)", "name": "지리산(반야봉)", "region": "남원", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "지리산(천왕봉)", "name": "지리산(천왕봉)", "region": "함양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "지리산(통영)", "name": "지리산(통영)", "region": "통영", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "천관산", "name": "천관산", "region": "장흥", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "천마산", "name": "천마산", "region": "남양주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "천성산", "name": "천성산", "region": "양산", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "천태산", "name": "천태산", "region": "영동", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "청계산", "name": "청계산", "region": "서울", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "청량산", "name": "청량산", "region": "봉화", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "청화산", "name": "청화산", "region": "괴산", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "추월산", "name": "추월산", "region": "순창", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "축령산(남양주)", "name": "축령산(남양주)", "region": "남양주", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "축령산(장성)", "name": "축령산(장성)", "region": "장성", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "치악산", "name": "치악산", "region": "원주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "칠갑산", "name": "칠갑산", "region": "청양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "칠보산", "name": "칠보산", "region": "괴산", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "태백산", "name": "태백산", "region": "태백", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "태화산", "name": "태화산", "region": "영월", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "팔공산", "name": "팔공산", "region": "대구", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "팔봉산", "name": "팔봉산", "region": "홍천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "팔영산", "name": "팔영산", "region": "고흥", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "한라산", "name": "한라산", "region": "제주", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "함백산", "name": "함백산", "region": "정선", "forest100": false, "blackyak100": true, "extraList": true}, {"key": "화악산", "name": "화악산", "region": "가평", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "화왕산", "name": "화왕산", "region": "창녕", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "황매산", "name": "황매산", "region": "합천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "황석산", "name": "황석산", "region": "함양", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "황악산", "name": "황악산", "region": "김천", "forest100": true, "blackyak100": true, "extraList": false}, {"key": "황장산", "name": "황장산", "region": "문경", "forest100": true, "blackyak100": false, "extraList": false}, {"key": "희양산", "name": "희양산", "region": "문경", "forest100": true, "blackyak100": false, "extraList": false}];
-const SAMPLE_MARKERS = [{"key": "가리산", "x": 56.65, "y": 15.26, "zone": "gangwon"}, {"key": "가리왕산", "x": 70.65, "y": 27.26, "zone": "gangwon"}, {"key": "가야산(경상)", "x": 50.5, "y": 62.57, "zone": "gyeongsang"}, {"key": "가야산(충남)", "x": 21.55, "y": 30.6, "zone": "chungcheong"}, {"key": "가지산", "x": 75.5, "y": 67.57, "zone": "gyeongsang"}, {"key": "감악산(원주)", "x": 52.45, "y": 25.53, "zone": "gangwon"}, {"key": "감악산(파주)", "x": 27.65, "y": 12.0, "zone": "capital"}, {"key": "강천산", "x": 19.4, "y": 66.5, "zone": "jeolla"}, {"key": "계룡산", "x": 28.65, "y": 37.0, "zone": "chungcheong"}, {"key": "계방산", "x": 63.45, "y": 24.53, "zone": "gangwon"}, {"key": "공작산", "x": 61.38, "y": 21.12, "zone": "gangwon"}, {"key": "관악산", "x": 33.65, "y": 13.92, "zone": "capital"}, {"key": "광덕산", "x": 28.65, "y": 31.0, "zone": "chungcheong"}, {"key": "구병산", "x": 39.55, "y": 40.6, "zone": "chungcheong"}, {"key": "구봉산", "x": 31.65, "y": 53.18, "zone": "jeolla"}, {"key": "금산", "x": 52.65, "y": 85.0, "zone": "gyeongsang"}, {"key": "금수산", "x": 51.55, "y": 35.6, "zone": "chungcheong"}, {"key": "금오산", "x": 57.65, "y": 54.0, "zone": "gyeongsang"}, {"key": "금정산", "x": 77.5, "y": 69.57, "zone": "gyeongsang"}, {"key": "깃대봉", "x": 4.65, "y": 78.0, "zone": "jeolla"}, {"key": "남산", "x": 80.65, "y": 60.0, "zone": "gyeongsang"}, {"key": "내변산", "x": 10.4, "y": 54.5, "zone": "jeolla"}, {"key": "내연산", "x": 79.65, "y": 49.0, "zone": "gyeongsang"}, {"key": "내장산", "x": 17.65, "y": 59.0, "zone": "jeolla"}, {"key": "달마산", "x": 7.4, "y": 85.5, "zone": "jeolla"}, {"key": "대둔산", "x": 25.65, "y": 42.0, "zone": "chungcheong"}, {"key": "대암산", "x": 62.65, "y": 12.0, "zone": "gangwon"}, {"key": "대야산", "x": 45.65, "y": 32.43, "zone": "chungcheong"}, {"key": "덕룡산", "x": 15.65, "y": 84.0, "zone": "jeolla"}, {"key": "덕숭산", "x": 26.1, "y": 33.65, "zone": "chungcheong"}, {"key": "덕유산", "x": 36.4, "y": 54.5, "zone": "jeolla"}, {"key": "덕항산", "x": 77.45, "y": 36.53, "zone": "gangwon"}, {"key": "도락산", "x": 57.65, "y": 36.0, "zone": "chungcheong"}, {"key": "도봉산", "x": 39.25, "y": 16.99, "zone": "capital"}, {"key": "동악산", "x": 26.65, "y": 73.0, "zone": "jeolla"}, {"key": "두륜산", "x": 12.25, "y": 88.75, "zone": "jeolla"}, {"key": "두타산", "x": 82.2, "y": 39.72, "zone": "gangwon"}, {"key": "마니산", "x": 21.65, "y": 12.0, "zone": "capital"}, {"key": "마이산", "x": 36.48, "y": 59.16, "zone": "jeolla"}, {"key": "명성산", "x": 49.65, "y": 50.0, "zone": "all"}, {"key": "명지산", "x": 44.65, "y": 12.92, "zone": "capital"}, {"key": "모악산", "x": 23.65, "y": 54.0, "zone": "jeolla"}, {"key": "무등산", "x": 19.65, "y": 72.0, "zone": "jeolla"}, {"key": "무학산", "x": 66.65, "y": 76.0, "zone": "gyeongsang"}, {"key": "미륵산", "x": 60.5, "y": 80.57, "zone": "gyeongsang"}, {"key": "민주지산", "x": 41.55, "y": 46.6, "zone": "chungcheong"}, {"key": "방장산", "x": 16.65, "y": 65.18, "zone": "jeolla"}, {"key": "방태산", "x": 64.45, "y": 14.53, "zone": "gangwon"}, {"key": "백덕산", "x": 59.45, "y": 31.53, "zone": "gangwon"}, {"key": "백암산", "x": 21.48, "y": 71.16, "zone": "jeolla"}, {"key": "백운산(광양)", "x": 35.65, "y": 78.0, "zone": "jeolla"}, {"key": "백운산(정선)", "x": 75.38, "y": 33.12, "zone": "gangwon"}, {"key": "백운산(포천)", "x": 37.65, "y": 15.0, "zone": "capital"}, {"key": "변산", "x": 15.25, "y": 57.75, "zone": "jeolla"}, {"key": "북한산", "x": 37.59, "y": 21.05, "zone": "capital"}, {"key": "불갑산", "x": 9.65, "y": 70.0, "zone": "jeolla"}, {"key": "비슬산", "x": 61.5, "y": 55.57, "zone": "gyeongsang"}, {"key": "삼악산", "x": 51.65, "y": 11.26, "zone": "gangwon"}, {"key": "서대산", "x": 35.65, "y": 43.0, "zone": "chungcheong"}, {"key": "선운산", "x": 11.65, "y": 64.0, "zone": "jeolla"}, {"key": "설악산", "x": 72.65, "y": 16.0, "zone": "gangwon"}, {"key": "성인봉", "x": 92.65, "y": 31.0, "zone": "all"}, {"key": "소백산", "x": 62.65, "y": 41.0, "zone": "gyeongsang"}, {"key": "소요산", "x": 30.65, "y": 14.0, "zone": "capital"}, {"key": "속리산", "x": 44.1, "y": 43.65, "zone": "chungcheong"}, {"key": "수락산", "x": 30.41, "y": 21.3, "zone": "capital"}, {"key": "신불산", "x": 80.15, "y": 70.68, "zone": "gyeongsang"}, {"key": "연인산", "x": 50.25, "y": 15.99, "zone": "capital"}, {"key": "연화산", "x": 70.65, "y": 78.0, "zone": "gyeongsang"}, {"key": "오대산(노인봉)", "x": 76.65, "y": 22.0, "zone": "gangwon"}, {"key": "오대산(비로봉)", "x": 68.2, "y": 27.72, "zone": "gangwon"}, {"key": "오봉산", "x": 56.38, "y": 17.12, "zone": "gangwon"}, {"key": "오서산", "x": 13.65, "y": 38.0, "zone": "chungcheong"}, {"key": "용문산", "x": 45.65, "y": 22.0, "zone": "capital"}, {"key": "용봉산", "x": 18.65, "y": 34.0, "zone": "chungcheong"}, {"key": "용화산", "x": 47.97, "y": 16.62, "zone": "gangwon"}, {"key": "운문산", "x": 65.65, "y": 63.0, "zone": "gyeongsang"}, {"key": "운악산", "x": 48.59, "y": 20.05, "zone": "capital"}, {"key": "운장산", "x": 27.87, "y": 58.66, "zone": "jeolla"}, {"key": "월악산", "x": 56.1, "y": 38.65, "zone": "chungcheong"}, {"key": "월출산", "x": 12.65, "y": 80.0, "zone": "jeolla"}, {"key": "유명산", "x": 41.41, "y": 20.3, "zone": "capital"}, {"key": "응봉산", "x": 81.65, "y": 43.0, "zone": "gyeongsang"}, {"key": "장안산", "x": 36.65, "y": 63.0, "zone": "jeolla"}, {"key": "재약산", "x": 70.65, "y": 66.0, "zone": "gyeongsang"}, {"key": "적상산", "x": 41.25, "y": 57.75, "zone": "jeolla"}, {"key": "점봉산", "x": 69.2, "y": 17.72, "zone": "gangwon"}, {"key": "조계산", "x": 29.65, "y": 79.0, "zone": "jeolla"}, {"key": "조령산", "x": 54.65, "y": 39.35, "zone": "gyeongsang"}, {"key": "주왕산", "x": 70.65, "y": 49.0, "zone": "gyeongsang"}, {"key": "주흘산", "x": 59.94, "y": 43.25, "zone": "gyeongsang"}, {"key": "지리산(바래봉)", "x": 30.4, "y": 67.5, "zone": "jeolla"}, {"key": "지리산(반야봉)", "x": 35.25, "y": 70.75, "zone": "jeolla"}, {"key": "지리산(천왕봉)", "x": 44.5, "y": 66.57, "zone": "gyeongsang"}, {"key": "지리산(통영)", "x": 65.15, "y": 83.68, "zone": "gyeongsang"}, {"key": "천관산", "x": 18.65, "y": 82.0, "zone": "jeolla"}, {"key": "천마산", "x": 36.25, "y": 16.4, "zone": "capital"}, {"key": "천성산", "x": 82.15, "y": 72.68, "zone": "gyeongsang"}, {"key": "천태산", "x": 46.1, "y": 49.65, "zone": "chungcheong"}, {"key": "청계산", "x": 28.75, "y": 16.99, "zone": "capital"}, {"key": "청량산", "x": 69.65, "y": 41.0, "zone": "gyeongsang"}, {"key": "청화산", "x": 50.18, "y": 38.03, "zone": "chungcheong"}, {"key": "추월산", "x": 24.25, "y": 69.75, "zone": "jeolla"}, {"key": "축령산(남양주)", "x": 41.4, "y": 19.85, "zone": "capital"}, {"key": "축령산(장성)", "x": 12.87, "y": 70.66, "zone": "jeolla"}, {"key": "치악산", "x": 57.2, "y": 28.72, "zone": "gangwon"}, {"key": "칠갑산", "x": 21.65, "y": 39.0, "zone": "chungcheong"}, {"key": "칠보산", "x": 42.17, "y": 37.54, "zone": "chungcheong"}, {"key": "태백산", "x": 75.65, "y": 37.0, "zone": "gangwon"}, {"key": "태화산", "x": 64.2, "y": 34.72, "zone": "gangwon"}, {"key": "팔공산", "x": 66.15, "y": 58.68, "zone": "gyeongsang"}, {"key": "팔봉산", "x": 52.97, "y": 20.62, "zone": "gangwon"}, {"key": "팔영산", "x": 27.65, "y": 86.0, "zone": "jeolla"}, {"key": "한라산", "x": 42.65, "y": 92.0, "zone": "jeju"}, {"key": "함백산", "x": 66.97, "y": 32.62, "zone": "gangwon"}, {"key": "화악산", "x": 39.75, "y": 15.99, "zone": "capital"}, {"key": "화왕산", "x": 60.65, "y": 63.0, "zone": "gyeongsang"}, {"key": "황매산", "x": 55.15, "y": 65.68, "zone": "gyeongsang"}, {"key": "황석산", "x": 49.15, "y": 69.68, "zone": "gyeongsang"}, {"key": "황악산", "x": 51.65, "y": 55.0, "zone": "gyeongsang"}, {"key": "황장산", "x": 55.35, "y": 46.4, "zone": "gyeongsang"}, {"key": "희양산", "x": 49.71, "y": 43.0, "zone": "gyeongsang"}];
-const STORAGE_KEY = "mountainRecordBookV92";
-const LEGACY_KEYS = ["mountainRecordBookV91","mountainRecordBookV90","mountainRecordBookV89","mountainRecordBookV88","mountainRecordBookV87","mountainRecordBookV86","mountainRecordBookV85","mountainRecordBookV84","mountainRecordBookV83","mountainRecordBook","mountain_tracker_pwa_v86_records","mountain_tracker_pwa_v85_records","mountain_tracker_pwa_v82_records","mountain_tracker_pwa_v81_records","mountain_tracker_pwa_v80_records","mountain_tracker_pwa_v70_records","mountain_tracker_pwa_v65_records","mountain_tracker_pwa_v64_records","mountain_tracker_pwa_v63_records","mountain_tracker_pwa_v62_records","mountain_tracker_pwa_v61_records","mountain_tracker_pwa_v6_records","mountain_tracker_pwa_v5_records","mountain_tracker_pwa_records","mountain_tracker_v4_records","mountain_tracker_v3_records","mountain_tracker_v2_clean_records"];
-const SAVE_META_KEY = "mountainRecordBookLastSavedV92";
+/* ─── 데이터 ─── */
+const MASTER = [{"key":"가리산","name":"가리산","region":"홍천","forest100":true,"blackyak100":true,"extraList":false},{"key":"가리왕산","name":"가리왕산","region":"정선","forest100":true,"blackyak100":true,"extraList":false},{"key":"가야산(경상)","name":"가야산(경상)","region":"합천","forest100":true,"blackyak100":true,"extraList":false},{"key":"가야산(충남)","name":"가야산(충남)","region":"예산","forest100":false,"blackyak100":true,"extraList":true},{"key":"가지산","name":"가지산","region":"울주","forest100":true,"blackyak100":true,"extraList":false},{"key":"감악산(원주)","name":"감악산(원주)","region":"원주","forest100":false,"blackyak100":true,"extraList":true},{"key":"감악산(파주)","name":"감악산(파주)","region":"파주","forest100":true,"blackyak100":true,"extraList":false},{"key":"강천산","name":"강천산","region":"순창","forest100":true,"blackyak100":false,"extraList":false},{"key":"계룡산","name":"계룡산","region":"공주","forest100":true,"blackyak100":true,"extraList":false},{"key":"계방산","name":"계방산","region":"평창","forest100":true,"blackyak100":true,"extraList":false},{"key":"공작산","name":"공작산","region":"홍천","forest100":true,"blackyak100":false,"extraList":false},{"key":"관악산","name":"관악산","region":"서울","forest100":true,"blackyak100":true,"extraList":false},{"key":"광덕산","name":"광덕산","region":"천안","forest100":false,"blackyak100":true,"extraList":true},{"key":"구병산","name":"구병산","region":"보은","forest100":true,"blackyak100":true,"extraList":false},{"key":"구봉산","name":"구봉산","region":"진안","forest100":false,"blackyak100":true,"extraList":true},{"key":"금산","name":"금산","region":"남해","forest100":true,"blackyak100":false,"extraList":false},{"key":"금수산","name":"금수산","region":"제천","forest100":true,"blackyak100":true,"extraList":false},{"key":"금오산","name":"금오산","region":"구미","forest100":true,"blackyak100":true,"extraList":false},{"key":"금정산","name":"금정산","region":"양산","forest100":true,"blackyak100":true,"extraList":false},{"key":"깃대봉","name":"깃대봉","region":"신안","forest100":true,"blackyak100":false,"extraList":false},{"key":"남산","name":"남산","region":"경주","forest100":true,"blackyak100":true,"extraList":false},{"key":"내변산","name":"내변산","region":"부안","forest100":false,"blackyak100":true,"extraList":true},{"key":"내연산","name":"내연산","region":"영덕","forest100":true,"blackyak100":true,"extraList":false},{"key":"내장산","name":"내장산","region":"정읍","forest100":true,"blackyak100":true,"extraList":false},{"key":"달마산","name":"달마산","region":"해남","forest100":false,"blackyak100":true,"extraList":true},{"key":"대둔산","name":"대둔산","region":"논산","forest100":true,"blackyak100":true,"extraList":false},{"key":"대암산","name":"대암산","region":"양구","forest100":true,"blackyak100":false,"extraList":false},{"key":"대야산","name":"대야산","region":"괴산","forest100":true,"blackyak100":true,"extraList":false},{"key":"덕룡산","name":"덕룡산","region":"전남","forest100":false,"blackyak100":true,"extraList":true},{"key":"덕숭산","name":"덕숭산","region":"예산","forest100":true,"blackyak100":false,"extraList":false},{"key":"덕유산","name":"덕유산","region":"무주","forest100":true,"blackyak100":true,"extraList":false},{"key":"덕항산","name":"덕항산","region":"삼척","forest100":true,"blackyak100":true,"extraList":false},{"key":"도락산","name":"도락산","region":"단양","forest100":true,"blackyak100":true,"extraList":false},{"key":"도봉산","name":"도봉산","region":"서울","forest100":true,"blackyak100":true,"extraList":false},{"key":"동악산","name":"동악산","region":"곡성","forest100":false,"blackyak100":true,"extraList":true},{"key":"두륜산","name":"두륜산","region":"해남","forest100":true,"blackyak100":true,"extraList":false},{"key":"두타산","name":"두타산","region":"삼척","forest100":true,"blackyak100":true,"extraList":false},{"key":"마니산","name":"마니산","region":"강화","forest100":true,"blackyak100":true,"extraList":false},{"key":"마이산","name":"마이산","region":"진안","forest100":true,"blackyak100":true,"extraList":false},{"key":"명성산","name":"명성산","region":"철원","forest100":true,"blackyak100":false,"extraList":false},{"key":"명지산","name":"명지산","region":"가평","forest100":true,"blackyak100":true,"extraList":false},{"key":"모악산","name":"모악산","region":"전주","forest100":true,"blackyak100":true,"extraList":false},{"key":"무등산","name":"무등산","region":"광주","forest100":true,"blackyak100":true,"extraList":false},{"key":"무학산","name":"무학산","region":"창원","forest100":true,"blackyak100":false,"extraList":false},{"key":"미륵산","name":"미륵산","region":"통영","forest100":true,"blackyak100":false,"extraList":false},{"key":"민주지산","name":"민주지산","region":"영동","forest100":true,"blackyak100":true,"extraList":false},{"key":"방장산","name":"방장산","region":"장성","forest100":true,"blackyak100":true,"extraList":false},{"key":"방태산","name":"방태산","region":"인제","forest100":true,"blackyak100":true,"extraList":false},{"key":"백덕산","name":"백덕산","region":"영월","forest100":true,"blackyak100":true,"extraList":false},{"key":"백암산","name":"백암산","region":"장성","forest100":true,"blackyak100":true,"extraList":false},{"key":"백운산(광양)","name":"백운산(광양)","region":"광양","forest100":true,"blackyak100":true,"extraList":false},{"key":"백운산(정선)","name":"백운산(정선)","region":"정선","forest100":true,"blackyak100":true,"extraList":false},{"key":"백운산(포천)","name":"백운산(포천)","region":"포천","forest100":true,"blackyak100":false,"extraList":false},{"key":"변산","name":"변산","region":"부안","forest100":true,"blackyak100":false,"extraList":false},{"key":"북한산","name":"북한산","region":"서울","forest100":true,"blackyak100":true,"extraList":false},{"key":"불갑산","name":"불갑산","region":"영광","forest100":false,"blackyak100":true,"extraList":true},{"key":"비슬산","name":"비슬산","region":"대구","forest100":true,"blackyak100":true,"extraList":false},{"key":"삼악산","name":"삼악산","region":"춘천","forest100":true,"blackyak100":true,"extraList":false},{"key":"서대산","name":"서대산","region":"금산","forest100":true,"blackyak100":false,"extraList":false},{"key":"선운산","name":"선운산","region":"고창","forest100":true,"blackyak100":true,"extraList":false},{"key":"설악산","name":"설악산","region":"양양","forest100":true,"blackyak100":true,"extraList":false},{"key":"성인봉","name":"성인봉","region":"울릉","forest100":true,"blackyak100":false,"extraList":false},{"key":"소백산","name":"소백산","region":"영주","forest100":true,"blackyak100":true,"extraList":false},{"key":"소요산","name":"소요산","region":"동두천","forest100":true,"blackyak100":true,"extraList":false},{"key":"속리산","name":"속리산","region":"보은","forest100":true,"blackyak100":true,"extraList":false},{"key":"수락산","name":"수락산","region":"서울","forest100":false,"blackyak100":true,"extraList":true},{"key":"신불산","name":"신불산","region":"울주","forest100":true,"blackyak100":true,"extraList":false},{"key":"연인산","name":"연인산","region":"가평","forest100":false,"blackyak100":true,"extraList":true},{"key":"연화산","name":"연화산","region":"고성","forest100":true,"blackyak100":false,"extraList":false},{"key":"오대산(노인봉)","name":"오대산(노인봉)","region":"강릉","forest100":false,"blackyak100":true,"extraList":true},{"key":"오대산(비로봉)","name":"오대산(비로봉)","region":"평창","forest100":true,"blackyak100":true,"extraList":false},{"key":"오봉산","name":"오봉산","region":"춘천","forest100":true,"blackyak100":true,"extraList":false},{"key":"오서산","name":"오서산","region":"보령","forest100":false,"blackyak100":true,"extraList":true},{"key":"용문산","name":"용문산","region":"양평","forest100":true,"blackyak100":true,"extraList":false},{"key":"용봉산","name":"용봉산","region":"홍성","forest100":false,"blackyak100":true,"extraList":true},{"key":"용화산","name":"용화산","region":"춘천","forest100":true,"blackyak100":true,"extraList":false},{"key":"운문산","name":"운문산","region":"청도","forest100":true,"blackyak100":false,"extraList":false},{"key":"운악산","name":"운악산","region":"가평","forest100":true,"blackyak100":true,"extraList":false},{"key":"운장산","name":"운장산","region":"진안","forest100":true,"blackyak100":true,"extraList":false},{"key":"월악산","name":"월악산","region":"제천","forest100":true,"blackyak100":true,"extraList":false},{"key":"월출산","name":"월출산","region":"영암","forest100":true,"blackyak100":true,"extraList":false},{"key":"유명산","name":"유명산","region":"가평","forest100":true,"blackyak100":true,"extraList":false},{"key":"응봉산","name":"응봉산","region":"울진","forest100":true,"blackyak100":true,"extraList":false},{"key":"장안산","name":"장안산","region":"장수","forest100":true,"blackyak100":true,"extraList":false},{"key":"재약산","name":"재약산","region":"밀양","forest100":true,"blackyak100":true,"extraList":false},{"key":"적상산","name":"적상산","region":"무주","forest100":true,"blackyak100":false,"extraList":false},{"key":"점봉산","name":"점봉산","region":"인제","forest100":true,"blackyak100":false,"extraList":false},{"key":"조계산","name":"조계산","region":"순천","forest100":true,"blackyak100":true,"extraList":false},{"key":"조령산","name":"조령산","region":"문경","forest100":false,"blackyak100":true,"extraList":true},{"key":"주왕산","name":"주왕산","region":"청송","forest100":true,"blackyak100":true,"extraList":false},{"key":"주흘산","name":"주흘산","region":"문경","forest100":true,"blackyak100":true,"extraList":false},{"key":"지리산(바래봉)","name":"지리산(바래봉)","region":"남원","forest100":false,"blackyak100":true,"extraList":true},{"key":"지리산(반야봉)","name":"지리산(반야봉)","region":"남원","forest100":false,"blackyak100":true,"extraList":true},{"key":"지리산(천왕봉)","name":"지리산(천왕봉)","region":"함양","forest100":true,"blackyak100":true,"extraList":false},{"key":"지리산(통영)","name":"지리산(통영)","region":"통영","forest100":true,"blackyak100":false,"extraList":false},{"key":"천관산","name":"천관산","region":"장흥","forest100":true,"blackyak100":true,"extraList":false},{"key":"천마산","name":"천마산","region":"남양주","forest100":true,"blackyak100":true,"extraList":false},{"key":"천성산","name":"천성산","region":"양산","forest100":true,"blackyak100":true,"extraList":false},{"key":"천태산","name":"천태산","region":"영동","forest100":true,"blackyak100":true,"extraList":false},{"key":"청계산","name":"청계산","region":"서울","forest100":false,"blackyak100":true,"extraList":true},{"key":"청량산","name":"청량산","region":"봉화","forest100":true,"blackyak100":true,"extraList":false},{"key":"청화산","name":"청화산","region":"괴산","forest100":false,"blackyak100":true,"extraList":true},{"key":"추월산","name":"추월산","region":"순창","forest100":true,"blackyak100":false,"extraList":false},{"key":"축령산(남양주)","name":"축령산(남양주)","region":"남양주","forest100":true,"blackyak100":false,"extraList":false},{"key":"축령산(장성)","name":"축령산(장성)","region":"장성","forest100":false,"blackyak100":true,"extraList":true},{"key":"치악산","name":"치악산","region":"원주","forest100":true,"blackyak100":true,"extraList":false},{"key":"칠갑산","name":"칠갑산","region":"청양","forest100":true,"blackyak100":true,"extraList":false},{"key":"칠보산","name":"칠보산","region":"괴산","forest100":false,"blackyak100":true,"extraList":true},{"key":"태백산","name":"태백산","region":"태백","forest100":true,"blackyak100":true,"extraList":false},{"key":"태화산","name":"태화산","region":"영월","forest100":true,"blackyak100":true,"extraList":false},{"key":"팔공산","name":"팔공산","region":"대구","forest100":true,"blackyak100":true,"extraList":false},{"key":"팔봉산","name":"팔봉산","region":"홍천","forest100":true,"blackyak100":true,"extraList":false},{"key":"팔영산","name":"팔영산","region":"고흥","forest100":true,"blackyak100":true,"extraList":false},{"key":"한라산","name":"한라산","region":"제주","forest100":true,"blackyak100":true,"extraList":false},{"key":"함백산","name":"함백산","region":"정선","forest100":false,"blackyak100":true,"extraList":true},{"key":"화악산","name":"화악산","region":"가평","forest100":true,"blackyak100":true,"extraList":false},{"key":"화왕산","name":"화왕산","region":"창녕","forest100":true,"blackyak100":true,"extraList":false},{"key":"황매산","name":"황매산","region":"합천","forest100":true,"blackyak100":true,"extraList":false},{"key":"황석산","name":"황석산","region":"함양","forest100":true,"blackyak100":true,"extraList":false},{"key":"황악산","name":"황악산","region":"김천","forest100":true,"blackyak100":true,"extraList":false},{"key":"황장산","name":"황장산","region":"문경","forest100":true,"blackyak100":false,"extraList":false},{"key":"희양산","name":"희양산","region":"문경","forest100":true,"blackyak100":false,"extraList":false}];
+
+const SAMPLE_MARKERS = [{"key":"가리산","x":56.65,"y":15.26,"zone":"gangwon"},{"key":"가리왕산","x":70.65,"y":27.26,"zone":"gangwon"},{"key":"가야산(경상)","x":50.5,"y":62.57,"zone":"gyeongsang"},{"key":"가야산(충남)","x":21.55,"y":30.6,"zone":"chungcheong"},{"key":"가지산","x":75.5,"y":67.57,"zone":"gyeongsang"},{"key":"감악산(원주)","x":52.45,"y":25.53,"zone":"gangwon"},{"key":"감악산(파주)","x":27.65,"y":12.0,"zone":"capital"},{"key":"강천산","x":19.4,"y":66.5,"zone":"jeolla"},{"key":"계룡산","x":28.65,"y":37.0,"zone":"chungcheong"},{"key":"계방산","x":63.45,"y":24.53,"zone":"gangwon"},{"key":"공작산","x":61.38,"y":21.12,"zone":"gangwon"},{"key":"관악산","x":33.65,"y":13.92,"zone":"capital"},{"key":"광덕산","x":28.65,"y":31.0,"zone":"chungcheong"},{"key":"구병산","x":39.55,"y":40.6,"zone":"chungcheong"},{"key":"구봉산","x":31.65,"y":53.18,"zone":"jeolla"},{"key":"금산","x":52.65,"y":85.0,"zone":"gyeongsang"},{"key":"금수산","x":51.55,"y":35.6,"zone":"chungcheong"},{"key":"금오산","x":57.65,"y":54.0,"zone":"gyeongsang"},{"key":"금정산","x":77.5,"y":69.57,"zone":"gyeongsang"},{"key":"깃대봉","x":4.65,"y":78.0,"zone":"jeolla"},{"key":"남산","x":80.65,"y":60.0,"zone":"gyeongsang"},{"key":"내변산","x":10.4,"y":54.5,"zone":"jeolla"},{"key":"내연산","x":79.65,"y":49.0,"zone":"gyeongsang"},{"key":"내장산","x":17.65,"y":59.0,"zone":"jeolla"},{"key":"달마산","x":7.4,"y":85.5,"zone":"jeolla"},{"key":"대둔산","x":25.65,"y":42.0,"zone":"chungcheong"},{"key":"대암산","x":62.65,"y":12.0,"zone":"gangwon"},{"key":"대야산","x":45.65,"y":32.43,"zone":"chungcheong"},{"key":"덕룡산","x":15.65,"y":84.0,"zone":"jeolla"},{"key":"덕숭산","x":26.1,"y":33.65,"zone":"chungcheong"},{"key":"덕유산","x":36.4,"y":54.5,"zone":"jeolla"},{"key":"덕항산","x":77.45,"y":36.53,"zone":"gangwon"},{"key":"도락산","x":57.65,"y":36.0,"zone":"chungcheong"},{"key":"도봉산","x":39.25,"y":16.99,"zone":"capital"},{"key":"동악산","x":26.65,"y":73.0,"zone":"jeolla"},{"key":"두륜산","x":12.25,"y":88.75,"zone":"jeolla"},{"key":"두타산","x":82.2,"y":39.72,"zone":"gangwon"},{"key":"마니산","x":21.65,"y":12.0,"zone":"capital"},{"key":"마이산","x":36.48,"y":59.16,"zone":"jeolla"},{"key":"명지산","x":44.65,"y":12.92,"zone":"capital"},{"key":"모악산","x":23.65,"y":54.0,"zone":"jeolla"},{"key":"무등산","x":19.65,"y":72.0,"zone":"jeolla"},{"key":"무학산","x":66.65,"y":76.0,"zone":"gyeongsang"},{"key":"미륵산","x":60.5,"y":80.57,"zone":"gyeongsang"},{"key":"민주지산","x":41.55,"y":46.6,"zone":"chungcheong"},{"key":"방장산","x":16.65,"y":65.18,"zone":"jeolla"},{"key":"방태산","x":64.45,"y":14.53,"zone":"gangwon"},{"key":"백덕산","x":59.45,"y":31.53,"zone":"gangwon"},{"key":"백암산","x":21.48,"y":71.16,"zone":"jeolla"},{"key":"백운산(광양)","x":35.65,"y":78.0,"zone":"jeolla"},{"key":"백운산(정선)","x":75.38,"y":33.12,"zone":"gangwon"},{"key":"백운산(포천)","x":37.65,"y":15.0,"zone":"capital"},{"key":"변산","x":15.25,"y":57.75,"zone":"jeolla"},{"key":"북한산","x":37.59,"y":21.05,"zone":"capital"},{"key":"불갑산","x":9.65,"y":70.0,"zone":"jeolla"},{"key":"비슬산","x":61.5,"y":55.57,"zone":"gyeongsang"},{"key":"삼악산","x":51.65,"y":11.26,"zone":"gangwon"},{"key":"서대산","x":35.65,"y":43.0,"zone":"chungcheong"},{"key":"선운산","x":11.65,"y":64.0,"zone":"jeolla"},{"key":"설악산","x":72.65,"y":16.0,"zone":"gangwon"},{"key":"소백산","x":62.65,"y":41.0,"zone":"gyeongsang"},{"key":"소요산","x":30.65,"y":14.0,"zone":"capital"},{"key":"속리산","x":44.1,"y":43.65,"zone":"chungcheong"},{"key":"수락산","x":30.41,"y":21.3,"zone":"capital"},{"key":"신불산","x":80.15,"y":70.68,"zone":"gyeongsang"},{"key":"연인산","x":50.25,"y":15.99,"zone":"capital"},{"key":"연화산","x":70.65,"y":78.0,"zone":"gyeongsang"},{"key":"오대산(노인봉)","x":76.65,"y":22.0,"zone":"gangwon"},{"key":"오대산(비로봉)","x":68.2,"y":27.72,"zone":"gangwon"},{"key":"오봉산","x":56.38,"y":17.12,"zone":"gangwon"},{"key":"오서산","x":13.65,"y":38.0,"zone":"chungcheong"},{"key":"용문산","x":45.65,"y":22.0,"zone":"capital"},{"key":"용봉산","x":18.65,"y":34.0,"zone":"chungcheong"},{"key":"용화산","x":47.97,"y":16.62,"zone":"gangwon"},{"key":"운문산","x":65.65,"y":63.0,"zone":"gyeongsang"},{"key":"운악산","x":48.59,"y":20.05,"zone":"capital"},{"key":"운장산","x":27.87,"y":58.66,"zone":"jeolla"},{"key":"월악산","x":56.1,"y":38.65,"zone":"chungcheong"},{"key":"월출산","x":12.65,"y":80.0,"zone":"jeolla"},{"key":"유명산","x":41.41,"y":20.3,"zone":"capital"},{"key":"응봉산","x":81.65,"y":43.0,"zone":"gyeongsang"},{"key":"장안산","x":36.65,"y":63.0,"zone":"jeolla"},{"key":"재약산","x":70.65,"y":66.0,"zone":"gyeongsang"},{"key":"적상산","x":41.25,"y":57.75,"zone":"jeolla"},{"key":"점봉산","x":69.2,"y":17.72,"zone":"gangwon"},{"key":"조계산","x":29.65,"y":79.0,"zone":"jeolla"},{"key":"조령산","x":54.65,"y":39.35,"zone":"gyeongsang"},{"key":"주왕산","x":70.65,"y":49.0,"zone":"gyeongsang"},{"key":"주흘산","x":59.94,"y":43.25,"zone":"gyeongsang"},{"key":"지리산(바래봉)","x":30.4,"y":67.5,"zone":"jeolla"},{"key":"지리산(반야봉)","x":35.25,"y":70.75,"zone":"jeolla"},{"key":"지리산(천왕봉)","x":44.5,"y":66.57,"zone":"gyeongsang"},{"key":"지리산(통영)","x":65.15,"y":83.68,"zone":"gyeongsang"},{"key":"천관산","x":18.65,"y":82.0,"zone":"jeolla"},{"key":"천마산","x":36.25,"y":16.4,"zone":"capital"},{"key":"천성산","x":82.15,"y":72.68,"zone":"gyeongsang"},{"key":"천태산","x":46.1,"y":49.65,"zone":"chungcheong"},{"key":"청계산","x":28.75,"y":16.99,"zone":"capital"},{"key":"청량산","x":69.65,"y":41.0,"zone":"gyeongsang"},{"key":"청화산","x":50.18,"y":38.03,"zone":"chungcheong"},{"key":"추월산","x":24.25,"y":69.75,"zone":"jeolla"},{"key":"축령산(남양주)","x":41.4,"y":19.85,"zone":"capital"},{"key":"축령산(장성)","x":12.87,"y":70.66,"zone":"jeolla"},{"key":"치악산","x":57.2,"y":28.72,"zone":"gangwon"},{"key":"칠갑산","x":21.65,"y":39.0,"zone":"chungcheong"},{"key":"칠보산","x":42.17,"y":37.54,"zone":"chungcheong"},{"key":"태백산","x":75.65,"y":37.0,"zone":"gangwon"},{"key":"태화산","x":64.2,"y":34.72,"zone":"gangwon"},{"key":"팔공산","x":66.15,"y":58.68,"zone":"gyeongsang"},{"key":"팔봉산","x":52.97,"y":20.62,"zone":"gangwon"},{"key":"팔영산","x":27.65,"y":86.0,"zone":"jeolla"},{"key":"한라산","x":42.65,"y":92.0,"zone":"jeju"},{"key":"함백산","x":66.97,"y":32.62,"zone":"gangwon"},{"key":"화악산","x":39.75,"y":15.99,"zone":"capital"},{"key":"화왕산","x":60.65,"y":63.0,"zone":"gyeongsang"},{"key":"황매산","x":55.15,"y":65.68,"zone":"gyeongsang"},{"key":"황석산","x":49.15,"y":69.68,"zone":"gyeongsang"},{"key":"황악산","x":51.65,"y":55.0,"zone":"gyeongsang"},{"key":"황장산","x":55.35,"y":46.4,"zone":"gyeongsang"},{"key":"희양산","x":49.71,"y":43.0,"zone":"gyeongsang"},{"key":"명성산","x":49.65,"y":50.0,"zone":"capital"},{"key":"성인봉","x":92.65,"y":31.0,"zone":"gangwon"}];
+
+/* ─── 스토리지 키 ─── */
+const STORAGE_KEY = "mountainRecordBookV97";
+const LEGACY_KEYS = ["mountainRecordBookV92","mountainRecordBookV91","mountainRecordBookV90","mountainRecordBookV89","mountainRecordBookV88","mountainRecordBookV87","mountainRecordBookV86","mountainRecordBookV85","mountainRecordBookV84","mountainRecordBookV83","mountainRecordBook","mountain_tracker_pwa_v86_records","mountain_tracker_pwa_v85_records","mountain_tracker_pwa_v82_records","mountain_tracker_pwa_v81_records","mountain_tracker_pwa_v80_records","mountain_tracker_pwa_v70_records","mountain_tracker_pwa_v65_records","mountain_tracker_pwa_v64_records","mountain_tracker_pwa_v63_records","mountain_tracker_pwa_v62_records","mountain_tracker_pwa_v61_records","mountain_tracker_pwa_v6_records","mountain_tracker_pwa_v5_records","mountain_tracker_pwa_records","mountain_tracker_v4_records","mountain_tracker_v3_records","mountain_tracker_v2_clean_records"];
+const SAVE_META_KEY = "mountainRecordBookLastSavedV97";
+
 let activeTab = "all", activeView = "list", activeZone = "capital";
+let heatmapYear = new Date().getFullYear();
 const expandedVisits = new Set();
 const MASTER_TOTAL = MASTER.length;
 const FOREST_TOTAL = MASTER.filter(x => x.forest100).length;
-const BLACK_TOTAL = MASTER.filter(x => x.blackyak100).length;
+const BLACK_TOTAL  = MASTER.filter(x => x.blackyak100).length;
 
-function setStaticCounts(){
-  const pairs = { totalMountains: MASTER_TOTAL, dashTotalMountains: MASTER_TOTAL, forestTotal: FOREST_TOTAL, blackTotal: BLACK_TOTAL, overallTotal: MASTER_TOTAL };
-  Object.entries(pairs).forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = String(value);
-  });
+/* ─── 토스트 ─── */
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
 }
 
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function getLastSavedAt(){ return localStorage.getItem(SAVE_META_KEY) || ""; }
-function updateLastSavedUI(value){
+/* ─── 날짜 유틸 ─── */
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+/* ─── 저장 타임스탬프 ─── */
+function getLastSavedAt() { return localStorage.getItem(SAVE_META_KEY) || ""; }
+function updateLastSavedUI(value) {
   const el = document.getElementById("lastSavedAt");
   if (!el) return;
   if (!value) { el.textContent = "아직 없음"; return; }
   try {
     const d = new Date(value);
     if (isNaN(d.getTime())) { el.textContent = value; return; }
-    const pad = n => String(n).padStart(2,"0");
-    el.textContent = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const p = n => String(n).padStart(2,"0");
+    el.textContent = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   } catch { el.textContent = value; }
 }
-function normalizeState(raw){
-  if (!raw || typeof raw !== "object") return { visits:{}, certs:{} };
+
+/* ─── 데이터 정규화 / 마이그레이션 ─── */
+function normalizeState(raw) {
+  if (!raw || typeof raw !== "object") return { visits:{}, certs:{}, memos:{} };
   if ("visits" in raw || "certs" in raw) {
     return {
       visits: raw.visits && typeof raw.visits === "object" ? raw.visits : {},
-      certs: raw.certs && typeof raw.certs === "object" ? raw.certs : {}
+      certs:  raw.certs  && typeof raw.certs  === "object" ? raw.certs  : {},
+      memos:  raw.memos  && typeof raw.memos  === "object" ? raw.memos  : {}
     };
   }
-  return { visits: raw && typeof raw === "object" ? raw : {}, certs:{} };
+  return { visits: raw && typeof raw === "object" ? raw : {}, certs:{}, memos:{} };
 }
-function migrateOldData(){
-  for (const key of LEGACY_KEYS){
+function migrateOldData() {
+  for (const key of LEGACY_KEYS) {
     const raw = localStorage.getItem(key);
     if (!raw) continue;
     try { return normalizeState(JSON.parse(raw)); } catch(e){}
   }
-  return { visits:{}, certs:{} };
+  return { visits:{}, certs:{}, memos:{} };
 }
-function loadData(){
+function loadData() {
   const current = localStorage.getItem(STORAGE_KEY);
-  if (current) {
-    try { return normalizeState(JSON.parse(current)); } catch(e){}
-  }
+  if (current) { try { return normalizeState(JSON.parse(current)); } catch(e){} }
   return migrateOldData();
 }
 let state = loadData();
-function markSaved(){
+
+function markSaved() {
   const stamp = new Date().toISOString();
   localStorage.setItem(SAVE_META_KEY, stamp);
   updateLastSavedUI(stamp);
 }
-function saveData(){
+function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   markSaved();
 }
 saveData();
-setStaticCounts();
 
-function getItem(key){ return MASTER.find(x => x.key === key); }
-function getVisits(key){ const arr = state.visits[key]; return Array.isArray(arr) ? arr.filter(Boolean).sort().reverse() : []; }
-function lastVisit(key){ const v = getVisits(key); return v.length ? v[0] : ""; }
-function addVisit(key,dateStr){ if(!dateStr) return false; if(!state.visits[key]) state.visits[key]=[]; if(!state.visits[key].includes(dateStr)){ state.visits[key].push(dateStr); state.visits[key].sort().reverse(); saveData(); return true; } return false; }
-function removeVisit(key,dateStr){ if(!state.visits[key]) return; state.visits[key]=state.visits[key].filter(v=>v!==dateStr); if(!state.visits[key].length) delete state.visits[key]; saveData(); }
-function getCert(key){ return Object.assign({forest:false,black:false,extra:false}, state.certs[key] || {}); }
-function setCert(key,type,value){ if(!state.certs[key]) state.certs[key] = {forest:false,black:false,extra:false}; state.certs[key][type]=value; saveData(); }
+/* ─── CRUD ─── */
+function getItem(key) { return MASTER.find(x => x.key === key); }
+function getVisits(key) { const a = state.visits[key]; return Array.isArray(a) ? a.filter(Boolean).sort().reverse() : []; }
+function lastVisit(key) { const v = getVisits(key); return v.length ? v[0] : ""; }
+function addVisit(key, dateStr) {
+  if (!dateStr) return false;
+  if (!state.visits[key]) state.visits[key] = [];
+  if (!state.visits[key].includes(dateStr)) {
+    state.visits[key].push(dateStr);
+    state.visits[key].sort().reverse();
+    saveData(); return true;
+  }
+  return false;
+}
+function removeVisit(key, dateStr) {
+  if (!state.visits[key]) return;
+  state.visits[key] = state.visits[key].filter(v => v !== dateStr);
+  if (!state.visits[key].length) delete state.visits[key];
+  saveData();
+}
+function getCert(key) { return Object.assign({forest:false,black:false,extra:false}, state.certs[key] || {}); }
+function setCert(key, type, value) {
+  if (!state.certs[key]) state.certs[key] = {forest:false,black:false,extra:false};
+  state.certs[key][type] = value;
+  saveData();
+}
+function getMemo(key) { return state.memos[key] || ""; }
+function setMemo(key, text) {
+  if (text.trim()) state.memos[key] = text.trim();
+  else delete state.memos[key];
+  saveData();
+}
 
-function progressType(key){
+function progressType(key) {
   const cert = getCert(key);
   if (cert.forest && cert.black) return "both";
   if (cert.forest) return "forest";
-  if (cert.black) return "black";
+  if (cert.black)  return "black";
   return "pending";
 }
-function mountainDone(item){ return getVisits(item.key).length>0; }
+function mountainDone(item) { return getVisits(item.key).length > 0; }
 
-function updateQuickChecksVisibility(){
-  const key = document.getElementById("quickMountainSelect").value;
+/* ─── 상단 통계 카운트 (정적) ─── */
+function setStaticCounts() {
+  const pairs = { totalMountains:MASTER_TOTAL, dashTotalMountains:MASTER_TOTAL, forestTotal:FOREST_TOTAL, blackTotal:BLACK_TOTAL, overallTotal:MASTER_TOTAL };
+  Object.entries(pairs).forEach(([id,v]) => { const el=document.getElementById(id); if(el) el.textContent=String(v); });
+}
+
+/* ─── 퀵 선택 체크박스 가시성 ─── */
+function updateQuickChecksVisibility() {
+  const key  = document.getElementById("quickMountainSelect").value;
   const item = getItem(key);
   const f = document.getElementById("quickForestCheck");
   const b = document.getElementById("quickBlackCheck");
-  f.parentElement.style.display = item && item.forest100 ? "flex" : "none";
-  b.parentElement.style.display = item && item.blackyak100 ? "flex" : "none";
+  f.parentElement.style.display = item && item.forest100  ? "flex" : "none";
+  b.parentElement.style.display = item && item.blackyak100? "flex" : "none";
   if (!item) { f.checked=false; b.checked=false; return; }
   const cert = getCert(key);
-  f.checked = item.forest100 ? cert.forest : false;
-  b.checked = item.blackyak100 ? cert.black : false;
+  f.checked = item.forest100  ? cert.forest : false;
+  b.checked = item.blackyak100? cert.black  : false;
 }
 
-function formatRecentLabel(dateStr, name){ return dateStr ? `${dateStr}<br>${name}` : "없음"; }
-function getAllVisitRows(){ const rows = []; MASTER.forEach(item => getVisits(item.key).forEach(d => rows.push({name:item.name,key:item.key,date:d,region:item.region || "미기재"}))); rows.sort((a,b)=> b.date.localeCompare(a.date) || a.name.localeCompare(b.name,"ko")); return rows; }
-
-
-function summarizeState(raw){
-  const visits = raw && raw.visits && typeof raw.visits === "object" ? raw.visits : {};
-  const certs = raw && raw.certs && typeof raw.certs === "object" ? raw.certs : {};
-  const visitCount = Object.values(visits).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-  const visitedMountains = Object.values(visits).filter(arr => Array.isArray(arr) && arr.length).length;
-  const certKeys = Object.values(certs).filter(v => v && (v.forest || v.black)).length;
-  return { visitCount, visitedMountains, certKeys };
-}
-function renderDashboard(){
-  const totalVisits = Object.values(state.visits).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-  const visitedMountains = MASTER.filter(mountainDone).length;
-  let recent = null, recentName = "";
-  MASTER.forEach(item => { const v = getVisits(item.key); if (v[0] && (!recent || v[0] > recent)) { recent = v[0]; recentName = item.name; } });
-  const forestDone = MASTER.filter(x => x.forest100 && getCert(x.key).forest).length;
-  const blackDone = MASTER.filter(x => x.blackyak100 && getCert(x.key).black).length;
-  const overallDone = visitedMountains;
-  const forestPercent = FOREST_TOTAL ? Math.round((forestDone / FOREST_TOTAL) * 100) : 0;
-  const blackPercent = BLACK_TOTAL ? Math.round((blackDone / BLACK_TOTAL) * 100) : 0;
-  const overallPercent = MASTER_TOTAL ? Math.round((overallDone / MASTER_TOTAL) * 100) : 0;
-  document.getElementById("totalMountains").textContent = MASTER_TOTAL;
-  document.getElementById("totalVisits").textContent = totalVisits;
-  document.getElementById("completedMountains").textContent = visitedMountains;
-  document.getElementById("recentVisit").textContent = recent ? `${recent} · ${recentName}` : "없음";
-  document.getElementById("dashTotalMountains").textContent = MASTER_TOTAL;
-  document.getElementById("dashTotalVisits").textContent = totalVisits;
-  document.getElementById("dashVisitedMountains").textContent = visitedMountains;
-  document.getElementById("dashRecentVisit").innerHTML = formatRecentLabel(recent, recentName);
-  document.getElementById("forestTotal").textContent = FOREST_TOTAL;
-  document.getElementById("blackTotal").textContent = BLACK_TOTAL;
-  document.getElementById("overallTotal").textContent = MASTER_TOTAL;
-  document.getElementById("forestCount").textContent = forestDone;
-  document.getElementById("blackCount").textContent = blackDone;
-  document.getElementById("overallCount").textContent = overallDone;
-  document.getElementById("forestFill").style.width = forestPercent + "%";
-  document.getElementById("blackFill").style.width = blackPercent + "%";
-  document.getElementById("overallFill").style.width = overallPercent + "%";
-  document.getElementById("forestRemain").textContent = `남은 산 ${FOREST_TOTAL - forestDone}개`;
-  document.getElementById("blackRemain").textContent = `남은 산 ${BLACK_TOTAL - blackDone}개`;
-  document.getElementById("overallRemain").textContent = `아직 방문 기록 없는 산 ${MASTER_TOTAL - overallDone}개`;
-  document.getElementById("forestPercent").textContent = `${forestPercent}%`;
-  document.getElementById("blackPercent").textContent = `${blackPercent}%`;
-  document.getElementById("overallPercent").textContent = `${overallPercent}%`;
-
+/* ─── 전체 방문 행 ─── */
+function getAllVisitRows() {
+  const rows = [];
+  MASTER.forEach(item => getVisits(item.key).forEach(d => rows.push({name:item.name,key:item.key,date:d,region:item.region||"미기재"})));
+  rows.sort((a,b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name,"ko"));
+  return rows;
 }
 
-function matchesTab(item, tab){
-  if (tab === "forest") return item.forest100;
-  if (tab === "black") return item.blackyak100;
-  if (tab === "done") return mountainDone(item);
-  if (tab === "undone") return !mountainDone(item);
+/* ─── 대시보드 렌더 ─── */
+function renderDashboard() {
+  const totalVisits    = Object.values(state.visits).reduce((s,a) => s+(Array.isArray(a)?a.length:0),0);
+  const visitedMounts  = MASTER.filter(mountainDone).length;
+  let recent=null, recentName="";
+  MASTER.forEach(item => { const v=getVisits(item.key); if(v[0]&&(!recent||v[0]>recent)){recent=v[0];recentName=item.name;} });
+  const forestDone  = MASTER.filter(x => x.forest100  && getCert(x.key).forest).length;
+  const blackDone   = MASTER.filter(x => x.blackyak100 && getCert(x.key).black ).length;
+  const forestPct   = FOREST_TOTAL ? Math.round(forestDone/FOREST_TOTAL*100) : 0;
+  const blackPct    = BLACK_TOTAL  ? Math.round(blackDone /BLACK_TOTAL *100) : 0;
+  const overallPct  = MASTER_TOTAL ? Math.round(visitedMounts/MASTER_TOTAL*100) : 0;
+
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  const setW = (id,pct) => { const el=document.getElementById(id); if(el) el.style.width=pct+"%"; };
+
+  set("totalMountains",MASTER_TOTAL); set("totalVisits",totalVisits);
+  set("completedMountains",visitedMounts);
+  const rv = document.getElementById("recentVisit");
+  if(rv) rv.textContent = recent ? `${recent} · ${recentName}` : "없음";
+  set("dashTotalMountains",MASTER_TOTAL); set("dashTotalVisits",totalVisits);
+  set("dashVisitedMountains",visitedMounts);
+  const drv = document.getElementById("dashRecentVisit");
+  if(drv) drv.innerHTML = recent ? `${recent}<br>${recentName}` : "없음";
+  set("forestCount",forestDone); set("blackCount",blackDone); set("overallCount",visitedMounts);
+  setW("forestFill",forestPct); setW("blackFill",blackPct); setW("overallFill",overallPct);
+  set("forestRemain",`남은 산 ${FOREST_TOTAL-forestDone}개`);
+  set("blackRemain",`남은 산 ${BLACK_TOTAL-blackDone}개`);
+  set("overallRemain",`아직 방문 기록 없는 산 ${MASTER_TOTAL-visitedMounts}개`);
+  set("forestPercent",`${forestPct}%`); set("blackPercent",`${blackPct}%`); set("overallPercent",`${overallPct}%`);
+}
+
+/* ─── 탭 필터 ─── */
+function matchesTab(item, tab) {
+  if (tab==="forest")  return item.forest100;
+  if (tab==="black")   return item.blackyak100;
+  if (tab==="done")    return mountainDone(item);
+  if (tab==="undone")  return !mountainDone(item);
   return true;
 }
-function tabLabel(tab){ return {all:"전체",forest:"산림청",black:"블랙야크",done:"방문기록 있음",undone:"미기록"}[tab] || "전체"; }
+function tabLabel(tab) { return {all:"전체",forest:"산림청",black:"블랙야크",done:"방문기록 있음",undone:"미기록"}[tab]||"전체"; }
 
-function populateQuickSelect(){
+/* ─── 퀵 셀렉트 채우기 ─── */
+function populateQuickSelect() {
   const select = document.getElementById("quickMountainSelect");
   select.innerHTML = '<option value="">산을 선택하세요</option>';
-  MASTER.slice().sort((a,b)=>a.name.localeCompare(b.name,"ko")).forEach(item => {
+  MASTER.slice().sort((a,b)=>a.name.localeCompare(b.name,"ko")).forEach(item=>{
     const o = document.createElement("option");
     o.value = item.key;
     o.textContent = item.region ? `${item.name} (${item.region})` : item.name;
@@ -407,13 +656,13 @@ function populateQuickSelect(){
   updateQuickChecksVisibility();
 }
 
-function renderRecent(){
+/* ─── 최근 기록 ─── */
+function renderRecent() {
   const box = document.getElementById("recentList");
   box.innerHTML = "";
   document.getElementById("currentTabLabel").textContent = `현재 탭: ${tabLabel(activeTab)}`;
-  const rows = getAllVisitRows();
-  const top5 = rows.slice(0,5);
-  if (!top5.length) { box.innerHTML = '<div class="empty">아직 기록된 최근 등산이 없습니다.</div>'; return; }
+  const top5 = getAllVisitRows().slice(0,5);
+  if (!top5.length) { box.innerHTML='<div class="empty">아직 기록된 최근 등산이 없습니다.</div>'; return; }
   top5.forEach(row => {
     const div = document.createElement("div");
     div.className = "recent-item";
@@ -422,215 +671,389 @@ function renderRecent(){
   });
 }
 
-function renderList(){
-  const list = document.getElementById("mountainList");
+/* ─── 리스트 렌더 ─── */
+function renderList() {
+  const list  = document.getElementById("mountainList");
   const query = document.getElementById("searchInput").value.trim().toLowerCase();
-  const sortBy = document.getElementById("sortFilter").value;
+  const sortBy= document.getElementById("sortFilter").value;
   list.innerHTML = "";
-  let filtered = MASTER.filter(item => (!query || `${item.name} ${item.region || ""}`.toLowerCase().includes(query)) && matchesTab(item, activeTab));
+
+  let filtered = MASTER.filter(item =>
+    (!query || `${item.name} ${item.region||""}`.toLowerCase().includes(query)) &&
+    matchesTab(item, activeTab)
+  );
   filtered.sort((a,b) => {
-    if (sortBy === "recent") return lastVisit(b.key).localeCompare(lastVisit(a.key)) || a.name.localeCompare(b.name, "ko");
-    if (sortBy === "visits") return getVisits(b.key).length - getVisits(a.key).length || a.name.localeCompare(b.name, "ko");
-    return a.name.localeCompare(b.name, "ko");
+    if (sortBy==="recent") return lastVisit(b.key).localeCompare(lastVisit(a.key)) || a.name.localeCompare(b.name,"ko");
+    if (sortBy==="visits") return getVisits(b.key).length - getVisits(a.key).length || a.name.localeCompare(b.name,"ko");
+    return a.name.localeCompare(b.name,"ko");
   });
+
   document.getElementById("listCountLabel").textContent = `목록 ${filtered.length}개`;
-  document.getElementById("listMetaInfo").textContent = document.getElementById("searchInput").value.trim() ? `검색 결과와 현재 탭 조건에 맞는 산만 표시 중` : `산 이름과 방문 기록을 정리합니다`;
+  document.getElementById("listMetaInfo").textContent = query
+    ? "검색 결과와 현재 탭 조건에 맞는 산만 표시 중"
+    : "산 이름과 방문 기록을 정리합니다";
+
   filtered.forEach(item => {
-    const visits = getVisits(item.key), cert = getCert(item.key), progressed = visits.length > 0 || cert.forest || cert.black;
-    const card = document.createElement("div"); card.className = "card mountain" + (progressed ? " done" : "");
+    const visits = getVisits(item.key), cert = getCert(item.key);
+    const progressed = visits.length > 0 || cert.forest || cert.black;
+
+    const card = document.createElement("div");
+    card.className = "card mountain" + (progressed?" done":"");
+    card.setAttribute("role","listitem");
+
+    // 상단: 이름 + 배지 + 액션
     const top = document.createElement("div"); top.className = "mountain-top";
     const left = document.createElement("div");
-    left.innerHTML = `<div class="name">${progressed ? "✔ " : ""}${item.name}</div><div class="sub">지역: ${item.region || "미기재"}<br>방문 횟수: ${visits.length}회</div>`;
+    left.innerHTML = `<div class="name">${progressed?"✔ ":""}${item.name}</div>
+      <div class="sub">지역: ${item.region||"미기재"} · 방문 ${visits.length}회</div>`;
     const badges = document.createElement("div"); badges.className = "badges";
-    if (item.forest100) badges.innerHTML += '<span class="chip blue">산림청 100</span>';
-    if (item.blackyak100) badges.innerHTML += '<span class="chip green">블랙야크 100</span>';
+    if (item.forest100)  badges.innerHTML += '<span class="chip blue">산림청 100</span>';
+    if (item.blackyak100)badges.innerHTML += '<span class="chip green">블랙야크 100</span>';
     left.appendChild(badges);
-    const actions = document.createElement("div"); actions.className = "actions";
-    const dateInput = document.createElement("input"); dateInput.type = "date"; dateInput.className = "date-input"; dateInput.value = todayStr();
-    const addBtn = document.createElement("button"); addBtn.textContent = "방문일 추가";
-    addBtn.addEventListener("click", () => { if (!dateInput.value) return alert("날짜를 먼저 선택해주세요."); const added = addVisit(item.key, dateInput.value); if (!added) return alert("같은 날짜 기록은 이미 있습니다."); renderAll(); });
-    const todayBtn = document.createElement("button"); todayBtn.textContent = "오늘";
-    todayBtn.addEventListener("click", () => { const added = addVisit(item.key, todayStr()); if (!added) return alert("오늘 날짜 기록은 이미 있습니다."); renderAll(); });
-    actions.appendChild(dateInput); actions.appendChild(addBtn); actions.appendChild(todayBtn); top.appendChild(left); top.appendChild(actions); card.appendChild(top);
 
+    const actions = document.createElement("div"); actions.className = "actions";
+    const dateInput = document.createElement("input");
+    dateInput.type="date"; dateInput.className="date-input"; dateInput.value=todayStr();
+    dateInput.setAttribute("aria-label","방문 날짜 선택");
+    const addBtn = document.createElement("button");
+    addBtn.textContent="방문일 추가";
+    addBtn.setAttribute("aria-label",`${item.name} 방문일 추가`);
+    addBtn.addEventListener("click",() => {
+      if(!dateInput.value) return alert("날짜를 먼저 선택해주세요.");
+      const added = addVisit(item.key, dateInput.value);
+      if (!added) return alert("같은 날짜 기록은 이미 있습니다.");
+      showToast(`${item.name} 방문 기록을 추가했습니다 ✓`);
+      renderAll();
+    });
+    const todayBtn = document.createElement("button");
+    todayBtn.textContent="오늘";
+    todayBtn.setAttribute("aria-label",`${item.name} 오늘 날짜로 기록`);
+    todayBtn.addEventListener("click",() => {
+      const added = addVisit(item.key, todayStr());
+      if (!added) return alert("오늘 날짜 기록은 이미 있습니다.");
+      showToast(`${item.name} 오늘 방문 기록을 추가했습니다 ✓`);
+      renderAll();
+    });
+    actions.appendChild(dateInput); actions.appendChild(addBtn); actions.appendChild(todayBtn);
+    top.appendChild(left); top.appendChild(actions); card.appendChild(top);
+
+    // 인증 체크
     const certGrid = document.createElement("div"); certGrid.className = "cert-grid";
-    [["산림청 인증","forest",cert.forest,item.forest100],["블랙야크 인증","black",cert.black,item.blackyak100]].forEach(([label, type, checked, visible]) => {
+    [["산림청 인증","forest",cert.forest,item.forest100],["블랙야크 인증","black",cert.black,item.blackyak100]].forEach(([label,type,checked,visible]) => {
       if (!visible) return;
-      const wrap = document.createElement("label"); wrap.className = "cert-item";
-      const box = document.createElement("input"); box.type = "checkbox"; box.checked = checked;
-      box.addEventListener("change", () => { setCert(item.key, type, box.checked); renderAll(); });
-      const text = document.createElement("span"); text.textContent = label;
+      const wrap = document.createElement("label"); wrap.className="cert-item";
+      const box = document.createElement("input"); box.type="checkbox"; box.checked=checked;
+      box.setAttribute("aria-label",`${item.name} ${label}`);
+      box.addEventListener("change",() => { setCert(item.key,type,box.checked); showToast(`${label} ${box.checked?"체크":"해제"} 저장됨 ✓`); renderAll(); });
+      const text = document.createElement("span"); text.textContent=label;
       wrap.appendChild(box); wrap.appendChild(text); certGrid.appendChild(wrap);
     });
     card.appendChild(certGrid);
 
-    const visitArea = document.createElement("div"); visitArea.className = "visit-area";
-    const visitHead = document.createElement("div"); visitHead.className = "visit-head";
-    const visitSummary = document.createElement("div"); visitSummary.className = "visit-summary";
-    const title = document.createElement("div"); title.className = "visit-title"; title.textContent = "방문 기록";
+    // 방문 기록 영역
+    const visitArea = document.createElement("div"); visitArea.className="visit-area";
+    const visitHead = document.createElement("div"); visitHead.className="visit-head";
+    const visitSummary = document.createElement("div"); visitSummary.className="visit-summary";
+    const title = document.createElement("div"); title.className="visit-title"; title.textContent="방문 기록";
     visitSummary.appendChild(title);
     if (visits.length) {
-      const recentBadge = document.createElement("div"); recentBadge.className = "recent-badge"; recentBadge.textContent = `최근 방문 ${visits[0]}`;
-      visitSummary.appendChild(recentBadge);
+      const badge = document.createElement("div"); badge.className="recent-badge"; badge.textContent=`최근 방문 ${visits[0]}`;
+      visitSummary.appendChild(badge);
     }
     visitHead.appendChild(visitSummary);
-    const visitList = document.createElement("div"); visitList.className = "visit-list";
-    const needsToggle = visits.length > 3;
-    const isExpanded = expandedVisits.has(item.key);
+    const visitList = document.createElement("div"); visitList.className="visit-list";
+    const needsToggle = visits.length > 3, isExpanded = expandedVisits.has(item.key);
     if (needsToggle) {
-      const toggle = document.createElement("button"); toggle.type = "button"; toggle.className = "toggle-link"; toggle.textContent = isExpanded ? "접기" : `전체 ${visits.length}개 보기`;
-      toggle.addEventListener("click", () => { if (expandedVisits.has(item.key)) expandedVisits.delete(item.key); else expandedVisits.add(item.key); renderList(); });
+      const toggle = document.createElement("button"); toggle.type="button"; toggle.className="toggle-link";
+      toggle.textContent = isExpanded ? "접기" : `전체 ${visits.length}개 보기`;
+      toggle.setAttribute("aria-expanded",isExpanded?"true":"false");
+      toggle.addEventListener("click",() => {
+        if(expandedVisits.has(item.key)) expandedVisits.delete(item.key);
+        else expandedVisits.add(item.key);
+        renderList();
+      });
       visitHead.appendChild(toggle);
     }
-    const visibleVisits = needsToggle && !isExpanded ? visits.slice(0, 3) : visits;
+    const visibleVisits = needsToggle && !isExpanded ? visits.slice(0,3) : visits;
     if (!visits.length) {
-      const empty = document.createElement("div"); empty.className = "empty"; empty.textContent = "아직 기록된 방문일이 없습니다."; visitList.appendChild(empty);
+      const empty = document.createElement("div"); empty.className="empty"; empty.textContent="아직 기록된 방문일이 없습니다."; visitList.appendChild(empty);
     } else {
       visibleVisits.forEach(dateStr => {
-        const pill = document.createElement("div"); pill.className = "visit-pill"; pill.innerHTML = `<span>${dateStr}</span>`;
-        const del = document.createElement("button"); del.textContent = "×"; del.addEventListener("click", () => { removeVisit(item.key, dateStr); renderAll(); });
-        pill.appendChild(del); visitList.appendChild(pill);
+        const pill = document.createElement("div"); pill.className="visit-pill";
+        const span = document.createElement("span"); span.textContent=dateStr;
+        const del = document.createElement("button"); del.textContent="×";
+        del.setAttribute("aria-label",`${dateStr} 방문 기록 삭제`);
+        del.addEventListener("click",() => {
+          if(!confirm(`${dateStr} 방문 기록을 삭제할까요?`)) return;
+          removeVisit(item.key,dateStr);
+          showToast("방문 기록이 삭제됐습니다");
+          renderAll();
+        });
+        pill.appendChild(span); pill.appendChild(del); visitList.appendChild(pill);
       });
     }
-    visitArea.appendChild(visitHead); visitArea.appendChild(visitList); card.appendChild(visitArea); list.appendChild(card);
+    visitArea.appendChild(visitHead); visitArea.appendChild(visitList);
+
+    // 메모
+    const memoArea = document.createElement("div"); memoArea.className="memo-area";
+    const memoLabel = document.createElement("div"); memoLabel.className="memo-label"; memoLabel.textContent="📝 등산 메모";
+    const memoInput = document.createElement("textarea"); memoInput.className="memo-input";
+    memoInput.placeholder="코스, 날씨, 소감 등 자유롭게 기록하세요...";
+    memoInput.value = getMemo(item.key);
+    memoInput.setAttribute("aria-label",`${item.name} 등산 메모`);
+    let memoSaveTimer;
+    memoInput.addEventListener("input",() => {
+      clearTimeout(memoSaveTimer);
+      memoSaveTimer = setTimeout(() => {
+        setMemo(item.key, memoInput.value);
+        showToast("메모 저장됨 ✓");
+      }, 800);
+    });
+    memoArea.appendChild(memoLabel); memoArea.appendChild(memoInput);
+    visitArea.appendChild(memoArea);
+
+    card.appendChild(visitArea); list.appendChild(card);
   });
+
   if (!filtered.length) {
-    const empty = document.createElement("div"); empty.className = "card mountain"; empty.innerHTML = '<div class="empty">조건에 맞는 산이 없습니다.</div>'; list.appendChild(empty);
+    const empty = document.createElement("div"); empty.className="card mountain";
+    empty.innerHTML='<div class="empty">조건에 맞는 산이 없습니다.</div>';
+    list.appendChild(empty);
   }
 }
 
-function showMapInfo(key){
-  const item = getItem(key), visits = getVisits(key), cert = getCert(key); if (!item) return;
+/* ─── 지도 ─── */
+function showMapInfo(key) {
+  const item=getItem(key), visits=getVisits(key), cert=getCert(key);
+  if(!item) return;
   const info = document.getElementById("mapInfo");
-  info.innerHTML = `<div class="map-info-title">${item.name}</div><div class="small">지역: ${item.region || "미기재"}<br>방문 횟수: ${visits.length}회<br>산림청 인증: ${cert.forest ? "완료" : "미완료"}<br>블랙야크 인증: ${cert.black ? "완료" : "미완료"}</div><div class="map-actions"><button type="button" id="mapAddTodayBtn">오늘 날짜로 기록</button><button type="button" id="mapGoListBtn">리스트에서 보기</button></div>`;
-  document.getElementById("mapAddTodayBtn").addEventListener("click", () => { const added = addVisit(key, todayStr()); if (!added) return alert("오늘 날짜 기록이 이미 있습니다."); renderAll(); showMapInfo(key); });
-  document.getElementById("mapGoListBtn").addEventListener("click", () => { activeView = "list"; setViewButtons(); document.getElementById("searchInput").value = item.name; renderList(); window.scrollTo({ top: document.getElementById("listView").offsetTop - 10, behavior: "smooth" }); });
-}
-
-function zoneAllows(marker){ return marker.zone === activeZone; }
-
-function visibleMarkers(){
-  return SAMPLE_MARKERS.filter(m => zoneAllows(m));
-}
-
-function updateMapHelp(){
-  const labels = {capital:"수도권",gangwon:"강원권",chungcheong:"충청권",jeolla:"전라권",gyeongsang:"경상권",jeju:"제주권"};
-  const count = visibleMarkers().length;
-  document.getElementById("mapHelpText").textContent = `${labels[activeZone]} 산 ${count}개를 카드형으로 정리했습니다. 실제 위치 표현 대신, 이름을 보기 쉽게 나열한 화면입니다.`;
-}
-
-function renderMarkers(){
-  const layer = document.getElementById("markerLayer");
-  layer.innerHTML = "";
-  const markers = visibleMarkers().sort((a,b) => {
-    const itemA = getItem(a.key), itemB = getItem(b.key);
-    return (itemA?.name || "").localeCompare(itemB?.name || "", "ko");
+  info.innerHTML = `<div class="map-info-title">${item.name}</div>
+    <div class="small">지역: ${item.region||"미기재"}<br>방문 횟수: ${visits.length}회<br>산림청 인증: ${cert.forest?"완료":"미완료"}<br>블랙야크 인증: ${cert.black?"완료":"미완료"}</div>
+    <div class="map-actions">
+      <button type="button" id="mapAddTodayBtn">오늘 날짜로 기록</button>
+      <button type="button" id="mapGoListBtn">리스트에서 보기</button>
+    </div>`;
+  document.getElementById("mapAddTodayBtn").addEventListener("click",() => {
+    const added = addVisit(key,todayStr());
+    if(!added) return alert("오늘 날짜 기록이 이미 있습니다.");
+    showToast(`${item.name} 오늘 방문 기록 추가 ✓`);
+    renderAll(); showMapInfo(key);
   });
-  markers.forEach((m) => {
-    const item = getItem(m.key); if (!item) return;
-    const type = progressType(item.key);
-    const visits = getVisits(item.key).length;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "marker-chip";
-    const certBadges = [
-      item.forest100 ? '<span class="chip blue">산림청100</span>' : '',
-      item.blackyak100 ? '<span class="chip green">블랙야크100</span>' : ''
-    ].join('');
-    button.innerHTML = `<span class="marker-dot ${type}"></span><span><div class="marker-chip-name">${item.name}</div><div class="marker-chip-sub">${item.region || "미기재"} · 방문 ${visits}회</div>${certBadges ? `<div class="badges">${certBadges}</div>` : ''}</span>`;
-    button.addEventListener("click", () => showMapInfo(item.key));
-    layer.appendChild(button);
+  document.getElementById("mapGoListBtn").addEventListener("click",() => {
+    activeView="list"; setViewButtons();
+    document.getElementById("searchInput").value = item.name;
+    renderList();
+    window.scrollTo({top:document.getElementById("listView").offsetTop-10,behavior:"smooth"});
   });
-  if (!markers.length){
-    layer.innerHTML = '<div class="empty">선택한 권역에 표시할 산이 없습니다.</div>';
+}
+function renderMarkers() {
+  const layer = document.getElementById("markerLayer"); layer.innerHTML="";
+  const markers = SAMPLE_MARKERS.filter(m => m.zone===activeZone)
+    .sort((a,b) => { const ia=getItem(a.key), ib=getItem(b.key); return (ia?.name||"").localeCompare(ib?.name||"","ko"); });
+  const labels={capital:"수도권",gangwon:"강원권",chungcheong:"충청권",jeolla:"전라권",gyeongsang:"경상권",jeju:"제주권"};
+  document.getElementById("mapHelpText").textContent =
+    `${labels[activeZone]} 산 ${markers.length}개를 카드형으로 정리했습니다. 이름을 누르면 방문 기록이 표시됩니다.`;
+  markers.forEach(m => {
+    const item=getItem(m.key); if(!item) return;
+    const type=progressType(item.key), visits=getVisits(item.key).length;
+    const btn = document.createElement("button");
+    btn.type="button"; btn.className="marker-chip"; btn.setAttribute("role","listitem");
+    btn.setAttribute("aria-label",`${item.name}, ${item.region||"미기재"}, 방문 ${visits}회`);
+    btn.innerHTML = `<span class="marker-dot ${type}" aria-hidden="true"></span><span>
+      <div class="marker-chip-name">${item.name}</div>
+      <div class="marker-chip-sub">${item.region||"미기재"} · 방문 ${visits}회</div>
+      <div class="badges">${item.forest100?'<span class="chip blue">산림청100</span>':''}${item.blackyak100?'<span class="chip green">블랙야크100</span>':''}</div>
+    </span>`;
+    btn.addEventListener("click",() => showMapInfo(item.key));
+    layer.appendChild(btn);
+  });
+  if(!markers.length) layer.innerHTML='<div class="empty">선택한 권역에 표시할 산이 없습니다.</div>';
+}
+
+/* ─── 달력 히트맵 ─── */
+function getAllVisitDates() {
+  const dates = new Set();
+  Object.values(state.visits).forEach(arr => { if(Array.isArray(arr)) arr.forEach(d => dates.add(d)); });
+  return dates;
+}
+function renderHeatmap() {
+  const year = heatmapYear;
+  document.getElementById("heatmapYear").textContent = year;
+  const allDates = getAllVisitDates();
+  const visitsByDate = {};
+  MASTER.forEach(item => getVisits(item.key).forEach(d => {
+    if (!visitsByDate[d]) visitsByDate[d] = [];
+    visitsByDate[d].push(item.name);
+  }));
+  const today = todayStr();
+  const monthNames = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+  const container = document.getElementById("heatmapMonths");
+  container.innerHTML = "";
+
+  let yearTotal=0, yearMountains=new Set();
+
+  for (let m=0; m<12; m++) {
+    const monthEl = document.createElement("div"); monthEl.className="heatmap-month";
+    const label = document.createElement("div"); label.className="heatmap-month-label"; label.textContent=monthNames[m];
+    monthEl.appendChild(label);
+    const daysEl = document.createElement("div"); daysEl.className="heatmap-days";
+    const firstDay = new Date(year,m,1).getDay();
+    for(let i=0;i<firstDay;i++){
+      const empty=document.createElement("div"); empty.className="heatmap-day heatmap-empty"; daysEl.appendChild(empty);
+    }
+    const daysInMonth = new Date(year,m+1,0).getDate();
+    for(let d=1;d<=daysInMonth;d++){
+      const dateStr = `${year}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      const hasVisit = allDates.has(dateStr);
+      const dayEl = document.createElement("div");
+      dayEl.className = "heatmap-day" + (hasVisit?" has-visit":"") + (dateStr===today?" today-mark":"");
+      dayEl.textContent = d;
+      if (hasVisit) {
+        yearTotal++;
+        const names = visitsByDate[dateStr]||[];
+        names.forEach(n => yearMountains.add(n));
+        dayEl.title = names.join(", ");
+        dayEl.setAttribute("aria-label",`${dateStr}: ${names.join(", ")}`);
+        dayEl.addEventListener("click",() => showToast(`${dateStr}: ${names.join(", ")}`));
+      }
+      daysEl.appendChild(dayEl);
+    }
+    monthEl.appendChild(daysEl);
+    container.appendChild(monthEl);
   }
+
+  const statsEl = document.getElementById("heatmapStats");
+  statsEl.innerHTML = `
+    <div class="heatmap-stat-item">🏔️ <strong>${year}년</strong> 총 등산 횟수</div>
+    <div class="heatmap-stat-item"><strong>${yearTotal}회</strong></div>
+    <div class="heatmap-stat-item">방문한 산 <strong>${yearMountains.size}개</strong></div>
+  `;
 }
 
-function renderAll(){ setStaticCounts(); renderDashboard(); renderRecent(); renderList(); renderMarkers(); updateQuickChecksVisibility(); updateMapHelp(); }
-function setViewButtons(){
-  document.querySelectorAll(".view-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.view === activeView));
-  document.getElementById("listView").classList.toggle("hidden", activeView !== "list");
-  document.getElementById("mapView").classList.toggle("hidden", activeView !== "map");
-}
-function setZoneButtons(){
-  document.querySelectorAll(".zone-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.zone === activeZone));
+/* ─── 전체 렌더 ─── */
+function renderAll() {
+  setStaticCounts();
+  renderDashboard();
+  renderRecent();
+  renderList();
+  renderMarkers();
+  updateQuickChecksVisibility();
+  if (activeView==="stats") renderHeatmap();
 }
 
-document.querySelectorAll(".view-btn").forEach(btn => btn.addEventListener("click", () => { activeView = btn.dataset.view; setViewButtons(); }));
-document.querySelectorAll(".zone-btn").forEach(btn => btn.addEventListener("click", () => { activeZone = btn.dataset.zone; setZoneButtons(); renderAll(); }));
-document.getElementById("searchInput").addEventListener("input", renderList);
-document.getElementById("sortFilter").addEventListener("change", renderList);
-document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => { activeTab = btn.dataset.tab; document.querySelectorAll(".tab-btn").forEach(x => x.classList.remove("active")); btn.classList.add("active"); renderAll(); }));
-document.getElementById("quickMountainSelect").addEventListener("change", updateQuickChecksVisibility);
-document.getElementById("quickAddBtn").addEventListener("click", () => {
-  const key = document.getElementById("quickMountainSelect").value;
+/* ─── 뷰 전환 ─── */
+function setViewButtons() {
+  document.querySelectorAll(".view-btn").forEach(btn => {
+    const active = btn.dataset.view===activeView;
+    btn.classList.toggle("active",active);
+    btn.setAttribute("aria-selected",active?"true":"false");
+  });
+  ["listView","mapView","statsView"].forEach(id => {
+    const view = id.replace("View","").toLowerCase();
+    document.getElementById(id).classList.toggle("hidden", activeView!==view && id!==`${activeView}View`);
+  });
+  // 정확히 일치 처리
+  document.getElementById("listView").classList.toggle("hidden",activeView!=="list");
+  document.getElementById("mapView").classList.toggle("hidden",activeView!=="map");
+  document.getElementById("statsView").classList.toggle("hidden",activeView!=="stats");
+  if (activeView==="stats") renderHeatmap();
+}
+function setZoneButtons() {
+  document.querySelectorAll(".zone-btn").forEach(btn => {
+    const active = btn.dataset.zone===activeZone;
+    btn.classList.toggle("active",active);
+    btn.setAttribute("aria-selected",active?"true":"false");
+  });
+}
+
+/* ─── 백업 요약 ─── */
+function summarizeState(raw) {
+  const visits = raw?.visits && typeof raw.visits==="object" ? raw.visits : {};
+  const certs  = raw?.certs  && typeof raw.certs ==="object" ? raw.certs  : {};
+  const visitCount = Object.values(visits).reduce((s,a) => s+(Array.isArray(a)?a.length:0),0);
+  const visitedMountains = Object.values(visits).filter(a => Array.isArray(a)&&a.length).length;
+  const certKeys = Object.values(certs).filter(v => v&&(v.forest||v.black)).length;
+  return {visitCount,visitedMountains,certKeys};
+}
+
+/* ─── 이벤트 리스너 ─── */
+document.querySelectorAll(".view-btn").forEach(btn => btn.addEventListener("click",() => {
+  activeView=btn.dataset.view; setViewButtons();
+}));
+document.querySelectorAll(".zone-btn").forEach(btn => btn.addEventListener("click",() => {
+  activeZone=btn.dataset.zone; setZoneButtons(); renderMarkers();
+}));
+document.getElementById("searchInput").addEventListener("input",renderList);
+document.getElementById("sortFilter").addEventListener("change",renderList);
+document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click",() => {
+  activeTab=btn.dataset.tab;
+  document.querySelectorAll(".tab-btn").forEach(x => { x.classList.remove("active"); x.setAttribute("aria-selected","false"); });
+  btn.classList.add("active"); btn.setAttribute("aria-selected","true");
+  renderRecent(); renderList();
+}));
+document.getElementById("quickMountainSelect").addEventListener("change",updateQuickChecksVisibility);
+document.getElementById("quickAddBtn").addEventListener("click",() => {
+  const key  = document.getElementById("quickMountainSelect").value;
   const date = document.getElementById("quickDate").value || todayStr();
   if (!key) return alert("산을 먼저 선택해주세요.");
   const item = getItem(key);
-  addVisit(key, date);
-  if (item && item.forest100) setCert(key, "forest", document.getElementById("quickForestCheck").checked);
-  if (item && item.blackyak100) setCert(key, "black", document.getElementById("quickBlackCheck").checked);
-  document.getElementById("quickMountainSelect").value = "";
-  document.getElementById("quickDate").value = todayStr();
-  document.getElementById("quickForestCheck").checked = false;
-  document.getElementById("quickBlackCheck").checked = false;
+  addVisit(key,date);
+  if(item&&item.forest100)  setCert(key,"forest",document.getElementById("quickForestCheck").checked);
+  if(item&&item.blackyak100)setCert(key,"black", document.getElementById("quickBlackCheck").checked);
+  showToast(`${item?.name||key} 기록이 저장됐습니다 ✓`);
+  document.getElementById("quickMountainSelect").value="";
+  document.getElementById("quickDate").value=todayStr();
+  document.getElementById("quickForestCheck").checked=false;
+  document.getElementById("quickBlackCheck").checked=false;
   renderAll();
 });
-document.getElementById("resetBtn").addEventListener("click", () => {
-  if (!confirm("정말 모든 방문 기록과 인증 체크를 초기화할까요?")) return;
+document.getElementById("resetBtn").addEventListener("click",() => {
+  if(!confirm("정말 모든 방문 기록과 인증 체크를 초기화할까요?")) return;
   const typed = prompt("초기화를 진행하려면 '초기화'를 입력해주세요.");
-  if (typed !== "초기화") return alert("초기화가 취소되었습니다.");
-  state = { visits:{}, certs:{} };
-  saveData();
-  renderAll();
-  alert("모든 기록을 초기화했습니다.");
+  if(typed!=="초기화") return alert("초기화가 취소되었습니다.");
+  state={visits:{},certs:{},memos:{}};
+  saveData(); showToast("모든 기록이 초기화됐습니다"); renderAll();
 });
-document.getElementById("exportBtn").addEventListener("click", () => {
-  const payload = { exportedAt: new Date().toISOString(), version: "v94", ...state };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "mountain-record-backup-v94.json";
-  a.click();
+document.getElementById("exportBtn").addEventListener("click",() => {
+  const payload={exportedAt:new Date().toISOString(),version:"v97",...state};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=`mountain-record-backup-v97.json`; a.click();
   URL.revokeObjectURL(url);
+  showToast("백업 파일 내보내기 완료 ✓");
 });
-document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
-document.getElementById("importFile").addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
+document.getElementById("importBtn").addEventListener("click",() => document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change",async(e) => {
+  const file=e.target.files&&e.target.files[0]; if(!file) return;
   try {
-    const parsed = JSON.parse(await file.text());
-    const incoming = normalizeState(parsed);
-    const summary = summarizeState(incoming);
-    if (!confirm(`백업을 가져오면 현재 기록을 덮어씁니다.\n방문 기록 ${summary.visitCount}개, 방문한 산 ${summary.visitedMountains}개, 인증 체크 ${summary.certKeys}개를 불러올까요?`)) {
-      e.target.value = "";
-      return;
+    const parsed=JSON.parse(await file.text());
+    const incoming=normalizeState(parsed);
+    const summary=summarizeState(incoming);
+    if(!confirm(`백업을 가져오면 현재 기록을 덮어씁니다.\n방문 기록 ${summary.visitCount}개, 방문한 산 ${summary.visitedMountains}개, 인증 체크 ${summary.certKeys}개를 불러올까요?`)){
+      e.target.value=""; return;
     }
-    state = incoming;
-    saveData();
-    renderAll();
-    alert("백업 데이터를 불러왔습니다.");
-  } catch {
-    alert("가져오기에 실패했습니다. JSON 백업 파일인지 확인해주세요.");
-  }
-  e.target.value = "";
+    state=incoming; saveData(); showToast("백업 데이터를 불러왔습니다 ✓"); renderAll();
+  } catch { alert("가져오기에 실패했습니다. JSON 백업 파일인지 확인해주세요."); }
+  e.target.value="";
 });
-
-document.getElementById("clearSearchBtn").addEventListener("click", () => {
-  document.getElementById("searchInput").value = "";
-  document.getElementById("sortFilter").value = "name";
+document.getElementById("clearSearchBtn").addEventListener("click",() => {
+  document.getElementById("searchInput").value="";
+  document.getElementById("sortFilter").value="name";
   renderList();
 });
+document.getElementById("heatmapPrevYear").addEventListener("click",() => { heatmapYear--; renderHeatmap(); });
+document.getElementById("heatmapNextYear").addEventListener("click",() => { heatmapYear++; renderHeatmap(); });
 
-
+/* ─── PWA 서비스워커 ─── */
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=v94").catch(() => {});
+  window.addEventListener("load",() => {
+    navigator.serviceWorker.register("./sw.js?v=v97").catch(()=>{});
   });
 }
 
-setStaticCounts(); populateQuickSelect(); setViewButtons(); setZoneButtons(); updateLastSavedUI(getLastSavedAt()); renderAll();
+/* ─── 초기 렌더 ─── */
+setStaticCounts(); populateQuickSelect(); setViewButtons(); setZoneButtons();
+updateLastSavedUI(getLastSavedAt()); renderAll();
 </script>
 </body>
 </html>

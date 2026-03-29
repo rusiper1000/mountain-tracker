@@ -1,13 +1,15 @@
-const CACHE_NAME = 'mountain-v94-cache';
+const CACHE_NAME = 'mountain-v97-cache';
 const APP_SHELL = [
-  './index.html?v=v94',
-  './manifest.webmanifest?v=v94',
-  './icon-192.png?v=v94',
-  './icon-512.png?v=v94'
+  './index.html?v=v97',
+  './manifest.webmanifest?v=v97',
+  './icon-192.png?v=v97',
+  './icon-512.png?v=v97'
 ];
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).catch(() => {}));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).catch(() => {})
+  );
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
@@ -20,16 +22,20 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put('./index.html?v=v94', copy)).catch(() => {});
-      return res;
-    }).catch(() => caches.match('./index.html?v=v94')));
+    event.respondWith(
+      fetch(req).then(res => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put('./index.html?v=v97', copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match('./index.html?v=v97'))
+    );
     return;
   }
-  event.respondWith(caches.match(req).then(cached => cached || fetch(req).then(res => {
-    const copy = res.clone();
-    caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
-    return res;
-  }).catch(() => cached)));
+  event.respondWith(
+    caches.match(req).then(cached => cached || fetch(req).then(res => {
+      const copy = res.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
+      return res;
+    }).catch(() => cached))
+  );
 });
