@@ -213,11 +213,23 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
 .marker-chip:hover{transform:translateY(-1px)}
 .marker-chip-name{font-size:14px;font-weight:800;line-height:1.35}
 .marker-chip-sub{font-size:12px;color:var(--sub);margin-top:2px}
-.marker-dot{width:12px;height:12px;border-radius:999px;flex:0 0 12px}
-.marker-dot.forest{background:var(--blue)}.marker-dot.black{background:var(--green)}.marker-dot.both{background:var(--purple)}.marker-dot.pending{background:var(--orange)}
+.marker-dot{
+  width:36px;height:36px;border-radius:999px;flex:0 0 36px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;letter-spacing:-.3px;
+  box-shadow:0 3px 8px rgba(0,0,0,.18);
+}
+.marker-dot.forest{background:var(--blue)}
+.marker-dot.black{background:var(--green)}
+.marker-dot.both{background:var(--purple)}
+.marker-dot.pending{background:var(--orange)}
 .map-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .legend-item{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13px}
-.dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+.dot{
+  width:36px;height:36px;border-radius:999px;display:inline-flex;
+  align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;
+}
 .dot.orange{background:var(--orange)}.dot.blue{background:var(--blue)}.dot.green{background:var(--green)}.dot.purple{background:var(--purple)}
 .map-info{margin-top:12px;padding:12px;border-radius:14px;background:var(--bg);border:1px solid var(--line)}
 .map-info-title{font-size:16px;font-weight:800;margin-bottom:4px}
@@ -421,10 +433,10 @@ h1{margin:0 0 10px;font-size:30px;letter-spacing:-.6px;line-height:1.22}
         <div id="markerLayer" role="list"></div>
       </div>
       <div class="map-legend" aria-label="범례">
-        <div class="legend-item"><span class="dot orange" aria-hidden="true"></span> 미완등</div>
-        <div class="legend-item"><span class="dot blue" aria-hidden="true"></span> 산림청 완료</div>
-        <div class="legend-item"><span class="dot green" aria-hidden="true"></span> 블랙야크 완료</div>
-        <div class="legend-item"><span class="dot purple" aria-hidden="true"></span> 둘 다 완료</div>
+        <div class="legend-item"><span class="dot orange" aria-hidden="true">미</span> 미완등</div>
+        <div class="legend-item"><span class="dot blue" aria-hidden="true">산</span> 산림청 완료</div>
+        <div class="legend-item"><span class="dot green" aria-hidden="true">블</span> 블랙야크 완료</div>
+        <div class="legend-item"><span class="dot purple" aria-hidden="true">둘</span> 둘 다 완료</div>
       </div>
       <div class="map-info" id="mapInfo" role="region" aria-live="polite">
         <div class="map-info-title">산을 선택하세요</div>
@@ -571,6 +583,10 @@ function progressType(key) {
   if (cert.black)  return "black";
   return "pending";
 }
+function dotLabel(type) {
+  return {forest:"산", black:"블", both:"둘", pending:"미"}[type] || "미";
+}
+
 function mountainDone(item) { return getVisits(item.key).length > 0; }
 
 /* ─── 상단 통계 카운트 (정적) ─── */
@@ -704,7 +720,11 @@ function renderList() {
     // 상단: 이름 + 배지 + 액션
     const top = document.createElement("div"); top.className = "mountain-top";
     const left = document.createElement("div");
-    left.innerHTML = `<div class="name">${progressed?"✔ ":""}${item.name}</div>
+    const type = progressType(item.key);
+    left.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <span class="marker-dot ${type}" aria-label="${dotLabel(type)}">${dotLabel(type)}</span>
+      <div class="name" style="margin:0;">${item.name}</div>
+    </div>
       <div class="sub">지역: ${item.region||"미기재"} · 방문 ${visits.length}회</div>`;
     const badges = document.createElement("div"); badges.className = "badges";
     if (item.forest100)  badges.innerHTML += '<span class="chip blue">산림청 100</span>';
@@ -859,7 +879,7 @@ function renderMarkers() {
     const btn = document.createElement("button");
     btn.type="button"; btn.className="marker-chip"; btn.setAttribute("role","listitem");
     btn.setAttribute("aria-label",`${item.name}, ${item.region||"미기재"}, 방문 ${visits}회`);
-    btn.innerHTML = `<span class="marker-dot ${type}" aria-hidden="true"></span><span>
+    btn.innerHTML = `<span class="marker-dot ${type}" aria-label="${dotLabel(type)}">${dotLabel(type)}</span><span>
       <div class="marker-chip-name">${item.name}</div>
       <div class="marker-chip-sub">${item.region||"미기재"} · 방문 ${visits}회</div>
       <div class="badges">${item.forest100?'<span class="chip blue">산림청100</span>':''}${item.blackyak100?'<span class="chip green">블랙야크100</span>':''}</div>
